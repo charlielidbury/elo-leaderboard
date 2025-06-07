@@ -11,56 +11,50 @@ export type Database = {
     Tables: {
       games: {
         Row: {
-          created_at: string | null;
+          a: string;
+          a_rating: number;
+          b: string;
+          b_rating: number;
+          created_at: string;
           id: string;
-          player1_id: string;
-          player1_rating_after: number;
-          player1_rating_before: number;
-          player2_id: string;
-          player2_rating_after: number;
-          player2_rating_before: number;
-          winner_id: string;
+          winner: string;
         };
         Insert: {
-          created_at?: string | null;
+          a: string;
+          a_rating: number;
+          b: string;
+          b_rating: number;
+          created_at?: string;
           id?: string;
-          player1_id: string;
-          player1_rating_after: number;
-          player1_rating_before: number;
-          player2_id: string;
-          player2_rating_after: number;
-          player2_rating_before: number;
-          winner_id: string;
+          winner: string;
         };
         Update: {
-          created_at?: string | null;
+          a?: string;
+          a_rating?: number;
+          b?: string;
+          b_rating?: number;
+          created_at?: string;
           id?: string;
-          player1_id?: string;
-          player1_rating_after?: number;
-          player1_rating_before?: number;
-          player2_id?: string;
-          player2_rating_after?: number;
-          player2_rating_before?: number;
-          winner_id?: string;
+          winner?: string;
         };
         Relationships: [
           {
             foreignKeyName: "games_player1_id_fkey";
-            columns: ["player1_id"];
+            columns: ["a"];
             isOneToOne: false;
             referencedRelation: "players";
             referencedColumns: ["id"];
           },
           {
             foreignKeyName: "games_player2_id_fkey";
-            columns: ["player2_id"];
+            columns: ["b"];
             isOneToOne: false;
             referencedRelation: "players";
             referencedColumns: ["id"];
           },
           {
             foreignKeyName: "games_winner_id_fkey";
-            columns: ["winner_id"];
+            columns: ["winner"];
             isOneToOne: false;
             referencedRelation: "players";
             referencedColumns: ["id"];
@@ -70,30 +64,21 @@ export type Database = {
       players: {
         Row: {
           created_at: string | null;
-          games_played: number | null;
           id: string;
-          losses: number | null;
           name: string;
-          rating: number | null;
-          wins: number | null;
+          rating_check: number;
         };
         Insert: {
           created_at?: string | null;
-          games_played?: number | null;
           id?: string;
-          losses?: number | null;
           name: string;
-          rating?: number | null;
-          wins?: number | null;
+          rating_check?: number;
         };
         Update: {
           created_at?: string | null;
-          games_played?: number | null;
           id?: string;
-          losses?: number | null;
           name?: string;
-          rating?: number | null;
-          wins?: number | null;
+          rating_check?: number;
         };
         Relationships: [];
       };

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Trophy, History } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { supabaseDataService } from "@/lib/supabase-service";
 import Rankings from "@/components/rankings";
 import Games from "@/components/games";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -14,33 +13,6 @@ export default function EloLeaderboard() {
   const [currentView, setCurrentView] = useState<"rankings" | "games">(
     "rankings"
   );
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-
-  const resetData = async () => {
-    setLoading(true);
-    try {
-      await supabaseDataService.resetToSampleData();
-      setRefreshTrigger((prev) => prev + 1);
-      toast({ title: "Data reset to sample data" });
-    } catch (error) {
-      toast({ title: "Error resetting data", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const clearAllData = async () => {
-    setLoading(true);
-    try {
-      await supabaseDataService.clearAllData();
-      setRefreshTrigger((prev) => prev + 1);
-      toast({ title: "All data cleared" });
-    } catch (error) {
-      toast({ title: "Error clearing data", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="container mx-auto p-6 space-y-8">
@@ -90,21 +62,7 @@ export default function EloLeaderboard() {
         </div>
       </div>
 
-      {currentView === "rankings" ? (
-        <Rankings refreshTrigger={refreshTrigger} />
-      ) : (
-        <Games refreshTrigger={refreshTrigger} />
-      )}
-
-      {/* Data Management Buttons */}
-      <div className="flex justify-center gap-4">
-        <Button onClick={resetData} disabled={loading} variant="outline">
-          Reset to Sample Data
-        </Button>
-        <Button onClick={clearAllData} disabled={loading} variant="destructive">
-          Clear All Data
-        </Button>
-      </div>
+      {currentView === "rankings" ? <Rankings /> : <Games />}
 
       {/* Floating Theme Toggle */}
       <ThemeToggle />

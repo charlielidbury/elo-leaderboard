@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
-import { supabaseDataService, type Player } from "@/lib/supabase-service";
+import { supabase, type Player } from "@/lib/supabase";
 
 interface RankingsProps {
   refreshTrigger?: number;
@@ -12,7 +12,11 @@ export default function Rankings({ refreshTrigger }: RankingsProps) {
 
   const fetchPlayers = async () => {
     try {
-      const { data: players, error } = await supabaseDataService.getPlayers();
+      const { data: players, error } = await supabase
+        .from("players")
+        .select("*")
+        .order("rating_check", { ascending: false });
+
       if (error) throw error;
       setPlayers(players || []);
     } catch (error) {
@@ -36,7 +40,7 @@ export default function Rankings({ refreshTrigger }: RankingsProps) {
   return (
     <div className="space-y-2">
       {players
-        .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+        .sort((a, b) => (b.rating_check || 0) - (a.rating_check || 0))
         .map((player, index) => (
           <div
             key={player.id}
@@ -49,14 +53,15 @@ export default function Rankings({ refreshTrigger }: RankingsProps) {
               <div>
                 <h3 className="font-semibold">{player.name}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {player.wins || 0}W - {player.losses || 0}L (
-                  {player.games_played || 0} games)
+                  Player since{" "}
+                  {player.created_at &&
+                    new Date(player.created_at).toLocaleDateString()}
                 </p>
               </div>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold">
-                {Math.round(player.rating || 0)}
+                {Math.round(player.rating_check || 0)}
               </div>
               <div className="text-sm text-muted-foreground">ELO Rating</div>
             </div>
