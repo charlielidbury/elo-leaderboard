@@ -7,7 +7,11 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 export const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
 // Export types for use in components
-export type Player = Database["public"]["Tables"]["players"]["Row"];
+export type UncheckedPlayer = Database["public"]["Tables"]["players"]["Row"];
+
+export type Player = UncheckedPlayer & {
+  rating: number;
+};
 
 export type Game = Database["public"]["Tables"]["games"]["Row"] & {
   player1?: Player;

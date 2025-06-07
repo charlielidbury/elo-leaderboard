@@ -1,13 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
-import { playersQuery } from "@/lib/backend";
+import { playersQuery, gamesQuery } from "@/lib/backend";
+import { calculatePlayerRatings, type PlayerWithRating } from "@/lib/elo";
+import { useMemo } from "react";
 
 interface PlayerDisplayProps {
-  player: {
-    id: string;
-    name: string;
-    rating_check?: number;
-  };
+  player: PlayerWithRating;
   index: number;
 }
 
@@ -26,9 +24,7 @@ function PlayerDisplay({ player, index }: PlayerDisplayProps) {
         </div>
       </div>
       <div className="text-right">
-        <div className="text-2xl font-bold">
-          {Math.round(player.rating_check || 0)}
-        </div>
+        <div className="text-2xl font-bold">{Math.round(player.rating)}</div>
       </div>
     </div>
   );
@@ -36,8 +32,14 @@ function PlayerDisplay({ player, index }: PlayerDisplayProps) {
 
 export default function Players() {
   const players = useQuery(playersQuery);
+  const games = useQuery(gamesQuery);
 
-  if (players.isLoading) {
+  const playersWithRatings = useMemo(() => {
+    if (!players.data || !games.data) return [];
+    return calculatePlayerRatings(players.data, games.data);
+  }, [players.data, games.data]);
+
+  if (players.isLoading || games.isLoading) {
     return (
       <p className="text-center text-muted-foreground py-8">
         Loading players...
@@ -45,7 +47,7 @@ export default function Players() {
     );
   }
 
-  if (players.isError) {
+  if (players.isError || games.isError) {
     return (
       <p className="text-center text-muted-foreground py-8">
         Error loading players. Please try again.
@@ -53,7 +55,7 @@ export default function Players() {
     );
   }
 
-  if (players.data?.length === 0) {
+  if (playersWithRatings.length === 0) {
     return (
       <p className="text-center text-muted-foreground py-8">
         No players yet. Add some players to get started!
@@ -63,8 +65,8 @@ export default function Players() {
 
   return (
     <div className="space-y-2">
-      {players.data
-        ?.sort((a, b) => (b.rating_check || 0) - (a.rating_check || 0))
+      {playersWithRatings
+        .sort((a, b) => b.rating - a.rating)
         .map((player, index) => (
           <PlayerDisplay key={player.id} player={player} index={index} />
         ))}
