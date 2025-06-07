@@ -46,3 +46,30 @@ export const gamesQuery = {
     return gamesWithPlayers as Game[];
   },
 };
+
+// Register game mutation
+export const registerGameMutation = {
+  mutationFn: async ({
+    player1,
+    player2,
+    winner,
+  }: {
+    player1: Player;
+    player2: Player;
+    winner: Player | null;
+  }) => {
+    const { data, error } = await supabase
+      .from("games")
+      .insert({
+        a: player1.id,
+        b: player2.id,
+        winner: winner?.id,
+        a_rating: player1.rating_check,
+        b_rating: player2.rating_check,
+      })
+      .select();
+
+    if (error) throw error;
+    return data;
+  },
+};

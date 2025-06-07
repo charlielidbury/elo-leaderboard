@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { gamesQuery } from "@/lib/backend";
-import { useEffect, useState } from "react";
-import { toast } from "@/hooks/use-toast";
+import { useState } from "react";
 import { type Game } from "@/lib/database";
+import RegisterGame from "@/components/register-game";
 
 function GameDisplay({ game }: { game: Game }) {
   const [isClicked, setIsClicked] = useState(false);
@@ -18,18 +18,12 @@ function GameDisplay({ game }: { game: Game }) {
     >
       {/* Left Player */}
       <div className="flex-1 text-left">
-        <div
-          className={`text-2xl font-bold ${
-            player1IsWinner ? "text-green-600" : "text-muted-foreground"
-          }`}
-        >
-          {game.player1?.name}
-        </div>
+        <div className="text-2xl font-bold">{game.player1?.name}</div>
       </div>
 
       {/* Score in the middle */}
       <div className="flex-shrink-0 mx-8 text-center">
-        <div className="text-3xl font-bold">
+        <div className="text-2xl">
           {player1IsWinner ? "1" : "0"} - {player2IsWinner ? "1" : "0"}
         </div>
         {isClicked && (
@@ -41,13 +35,7 @@ function GameDisplay({ game }: { game: Game }) {
 
       {/* Right Player */}
       <div className="flex-1 text-right">
-        <div
-          className={`text-2xl font-bold ${
-            player2IsWinner ? "text-green-600" : "text-muted-foreground"
-          }`}
-        >
-          {game.player2?.name}
-        </div>
+        <div className="text-2xl font-bold">{game.player2?.name}</div>
       </div>
     </div>
   );
@@ -70,19 +58,19 @@ export default function Games() {
     );
   }
 
-  if (games.data?.length === 0) {
-    return (
-      <p className="text-center text-muted-foreground py-8">
-        No games recorded yet.
-      </p>
-    );
-  }
-
   return (
     <div className="space-y-4">
-      {games.data?.slice(0, 10).map((game) => (
-        <GameDisplay key={game.id} game={game} />
-      ))}
+      <RegisterGame />
+
+      {games.data?.length === 0 ? (
+        <p className="text-center text-muted-foreground py-8">
+          No games recorded yet.
+        </p>
+      ) : (
+        games.data
+          ?.slice(0, 10)
+          .map((game) => <GameDisplay key={game.id} game={game} />)
+      )}
     </div>
   );
 }
