@@ -1,75 +1,26 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-
-import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-} from "@/components/ui/card";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  RotateCcw,
-  Trash2,
-  Trophy,
-  History,
-  TrendingUp,
-  TrendingDown,
-} from "lucide-react";
+import { Trophy, History } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import {
-  mockDataService,
-  type Player,
-  type GameResult,
-} from "@/lib/mock-data-service";
+import { supabaseDataService } from "@/lib/supabase-service";
 import Rankings from "@/components/rankings";
 import Games from "@/components/games";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function EloLeaderboard() {
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [gameHistory, setGameHistory] = useState<GameResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentView, setCurrentView] = useState<"rankings" | "games">(
     "rankings"
   );
-
-  useEffect(() => {
-    fetchPlayers();
-    fetchGameHistory();
-  }, []);
-
-  const fetchPlayers = async () => {
-    try {
-      const { data: players, error } = await mockDataService.getPlayers();
-      if (error) throw error;
-      setPlayers(players || []);
-    } catch (error) {
-      console.error("Error fetching players:", error);
-      toast({ title: "Error fetching players", variant: "destructive" });
-    }
-  };
-
-  const fetchGameHistory = async () => {
-    try {
-      const { data: games, error } =
-        await mockDataService.getGamesWithPlayers();
-      if (error) throw error;
-      setGameHistory(games || []);
-    } catch (error) {
-      console.error("Error fetching game history:", error);
-      toast({ title: "Error fetching games", variant: "destructive" });
-    }
-  };
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const resetData = async () => {
     setLoading(true);
     try {
-      await mockDataService.resetToSampleData();
-      await fetchPlayers();
-      await fetchGameHistory();
+      await supabaseDataService.resetToSampleData();
+      setRefreshTrigger((prev) => prev + 1);
       toast({ title: "Data reset to sample data" });
     } catch (error) {
       toast({ title: "Error resetting data", variant: "destructive" });
@@ -81,9 +32,8 @@ export default function EloLeaderboard() {
   const clearAllData = async () => {
     setLoading(true);
     try {
-      await mockDataService.clearAllData();
-      await fetchPlayers();
-      await fetchGameHistory();
+      await supabaseDataService.clearAllData();
+      setRefreshTrigger((prev) => prev + 1);
       toast({ title: "All data cleared" });
     } catch (error) {
       toast({ title: "Error clearing data", variant: "destructive" });
@@ -141,10 +91,20 @@ export default function EloLeaderboard() {
       </div>
 
       {currentView === "rankings" ? (
-        <Rankings players={players} />
+        <Rankings refreshTrigger={refreshTrigger} />
       ) : (
-        <Games gameHistory={gameHistory} />
+        <Games refreshTrigger={refreshTrigger} />
       )}
+
+      {/* Data Management Buttons */}
+      <div className="flex justify-center gap-4">
+        <Button onClick={resetData} disabled={loading} variant="outline">
+          Reset to Sample Data
+        </Button>
+        <Button onClick={clearAllData} disabled={loading} variant="destructive">
+          Clear All Data
+        </Button>
+      </div>
 
       {/* Floating Theme Toggle */}
       <ThemeToggle />

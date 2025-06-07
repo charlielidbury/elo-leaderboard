@@ -1,12 +1,32 @@
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown } from "lucide-react";
-import { type GameResult } from "@/lib/mock-data-service";
+import { useState, useEffect } from "react";
+import { toast } from "@/hooks/use-toast";
+import { supabaseDataService, type GameResult } from "@/lib/supabase-service";
 
 interface GamesProps {
-  gameHistory: GameResult[];
+  refreshTrigger?: number;
 }
 
-export default function Games({ gameHistory }: GamesProps) {
+export default function Games({ refreshTrigger }: GamesProps) {
+  const [gameHistory, setGameHistory] = useState<GameResult[]>([]);
+
+  const fetchGameHistory = async () => {
+    try {
+      const { data: games, error } =
+        await supabaseDataService.getGamesWithPlayers();
+      if (error) throw error;
+      setGameHistory(games || []);
+    } catch (error) {
+      console.error("Error fetching game history:", error);
+      toast({ title: "Error fetching games", variant: "destructive" });
+    }
+  };
+
+  useEffect(() => {
+    fetchGameHistory();
+  }, [refreshTrigger]);
+
   if (gameHistory.length === 0) {
     return (
       <p className="text-center text-muted-foreground py-8">
@@ -66,8 +86,10 @@ export default function Games({ gameHistory }: GamesProps) {
             <div className="text-right">
               <Badge variant="outline">Winner: {game.winner?.name}</Badge>
               <div className="text-sm text-muted-foreground mt-1">
-                {new Date(game.created_at).toLocaleDateString()}{" "}
-                {new Date(game.created_at).toLocaleTimeString()}
+                {game.created_at &&
+                  new Date(game.created_at).toLocaleDateString()}{" "}
+                {game.created_at &&
+                  new Date(game.created_at).toLocaleTimeString()}
               </div>
             </div>
           </div>
