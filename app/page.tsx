@@ -26,6 +26,7 @@ import {
 } from "@/lib/mock-data-service";
 import Rankings from "@/components/rankings";
 import Games from "@/components/games";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function EloLeaderboard() {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -144,6 +145,9 @@ export default function EloLeaderboard() {
       ) : (
         <Games gameHistory={gameHistory} />
       )}
+
+      {/* Floating Theme Toggle */}
+      <ThemeToggle />
     </div>
   );
 }
