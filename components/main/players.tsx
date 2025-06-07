@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { playersQuery } from "@/lib/backend";
 
-export default function Rankings() {
+export default function Players() {
   const players = useQuery(playersQuery);
 
   if (players.isLoading) {
