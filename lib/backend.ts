@@ -64,8 +64,8 @@ export const registerGameMutation = {
         a: player1.id,
         b: player2.id,
         winner: winner?.id,
-        a_rating: player1.rating_check,
-        b_rating: player2.rating_check,
+        a_rating_check: player1.rating_check,
+        b_rating_check: player2.rating_check,
       })
       .select();
 
