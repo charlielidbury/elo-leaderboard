@@ -1,53 +1,43 @@
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
-import { supabase, type GameResult } from "@/lib/supabase";
+import { type GameResult } from "@/lib/supabase";
+import { useEffect } from "react";
+import { gamesQuery } from "@/lib/backend";
 
-interface GamesProps {
-  refreshTrigger?: number;
-}
+export default function Games() {
+  const {
+    data: gameHistory = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery<GameResult[], Error>({
+    queryKey: gamesQuery.queryKey,
+    queryFn: gamesQuery.queryFn,
+  });
 
-export default function Games({ refreshTrigger }: GamesProps) {
-  const [gameHistory, setGameHistory] = useState<GameResult[]>([]);
-
-  const fetchGameHistory = async () => {
-    try {
-      const { data: games, error } = await supabase
-        .from("games")
-        .select(
-          `
-          *,
-          player1:players!games_player1_id_fkey(*),
-          player2:players!games_player2_id_fkey(*),
-          winner_player:players!games_winner_id_fkey(*)
-        `
-        )
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      // Transform the data to match the expected format
-      const gamesWithPlayers =
-        games?.map((game) => ({
-          ...game,
-          player1: Array.isArray(game.player1) ? game.player1[0] : game.player1,
-          player2: Array.isArray(game.player2) ? game.player2[0] : game.player2,
-          winner: Array.isArray(game.winner_player)
-            ? game.winner_player[0]
-            : game.winner_player,
-        })) || [];
-
-      setGameHistory(gamesWithPlayers as GameResult[]);
-    } catch (error) {
+  // Handle errors with useEffect since onError was removed in v5
+  useEffect(() => {
+    if (isError && error) {
       console.error("Error fetching game history:", error);
       toast({ title: "Error fetching games", variant: "destructive" });
     }
-  };
+  }, [isError, error]);
 
-  useEffect(() => {
-    fetchGameHistory();
-  }, [refreshTrigger]);
+  if (isLoading) {
+    return (
+      <p className="text-center text-muted-foreground py-8">Loading games...</p>
+    );
+  }
+
+  if (isError) {
+    return (
+      <p className="text-center text-muted-foreground py-8">
+        Error loading games. Please try again.
+      </p>
+    );
+  }
 
   if (gameHistory.length === 0) {
     return (

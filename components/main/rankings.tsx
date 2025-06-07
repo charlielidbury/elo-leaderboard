@@ -1,35 +1,27 @@
 import { Badge } from "@/components/ui/badge";
-import { useState, useEffect } from "react";
-import { toast } from "@/hooks/use-toast";
-import { supabase, type Player } from "@/lib/supabase";
+import { useQuery } from "@tanstack/react-query";
+import { playersQuery } from "@/lib/backend";
 
-interface RankingsProps {
-  refreshTrigger?: number;
-}
+export default function Rankings() {
+  const players = useQuery(playersQuery);
 
-export default function Rankings({ refreshTrigger }: RankingsProps) {
-  const [players, setPlayers] = useState<Player[]>([]);
+  if (players.isLoading) {
+    return (
+      <p className="text-center text-muted-foreground py-8">
+        Loading players...
+      </p>
+    );
+  }
 
-  const fetchPlayers = async () => {
-    try {
-      const { data: players, error } = await supabase
-        .from("players")
-        .select("*")
-        .order("rating_check", { ascending: false });
+  if (players.isError) {
+    return (
+      <p className="text-center text-muted-foreground py-8">
+        Error loading players. Please try again.
+      </p>
+    );
+  }
 
-      if (error) throw error;
-      setPlayers(players || []);
-    } catch (error) {
-      console.error("Error fetching players:", error);
-      toast({ title: "Error fetching players", variant: "destructive" });
-    }
-  };
-
-  useEffect(() => {
-    fetchPlayers();
-  }, [refreshTrigger]);
-
-  if (players.length === 0) {
+  if (players.data?.length === 0) {
     return (
       <p className="text-center text-muted-foreground py-8">
         No players yet. Add some players to get started!
@@ -39,8 +31,8 @@ export default function Rankings({ refreshTrigger }: RankingsProps) {
 
   return (
     <div className="space-y-2">
-      {players
-        .sort((a, b) => (b.rating_check || 0) - (a.rating_check || 0))
+      {players.data
+        ?.sort((a, b) => (b.rating_check || 0) - (a.rating_check || 0))
         .map((player, index) => (
           <div
             key={player.id}

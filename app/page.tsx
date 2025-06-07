@@ -4,8 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Trophy, History } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import Rankings from "@/components/rankings";
-import Games from "@/components/games";
+import Rankings from "@/components/main/rankings";
+import Games from "@/components/main/games";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function EloLeaderboard() {
