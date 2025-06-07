@@ -8,11 +8,9 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
 // Export types for use in components
 export type Player = Database["public"]["Tables"]["players"]["Row"];
-export type GameResult = Database["public"]["Tables"]["games"]["Row"] & {
+
+export type Game = Database["public"]["Tables"]["games"]["Row"] & {
   player1?: Player;
   player2?: Player;
   winner?: Player;
 };
-
-export type PlayerInsert = Database["public"]["Tables"]["players"]["Insert"];
-export type GameInsert = Database["public"]["Tables"]["games"]["Insert"];

@@ -1,4 +1,4 @@
-import { supabase, type Player, type GameResult } from "@/lib/supabase";
+import { supabase, type Player, type Game } from "@/lib/database";
 
 // Players query
 export const playersQuery = {
@@ -17,7 +17,7 @@ export const playersQuery = {
 // Games query
 export const gamesQuery = {
   queryKey: ["games"],
-  queryFn: async (): Promise<GameResult[]> => {
+  queryFn: async (): Promise<Game[]> => {
     const { data: games, error } = await supabase
       .from("games")
       .select(
@@ -43,6 +43,6 @@ export const gamesQuery = {
           : game.winner_player,
       })) || [];
 
-    return gamesWithPlayers as GameResult[];
+    return gamesWithPlayers as Game[];
   },
 };

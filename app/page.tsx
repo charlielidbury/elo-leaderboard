@@ -3,27 +3,32 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Trophy, History } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
 import Players from "@/components/main/players";
 import Games from "@/components/main/games";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LoginButton } from "@/components/login-button";
 
 export default function EloLeaderboard() {
-  const [loading, setLoading] = useState(false);
   const [currentView, setCurrentView] = useState<"rankings" | "games">(
     "rankings"
   );
 
   return (
     <div className="container mx-auto p-6 space-y-8">
-      <div className="text-center space-y-2">
-        <h1 className="text-4xl font-bold flex items-center justify-center gap-2">
-          <Trophy className="h-8 w-8 text-yellow-500" />
-          ELO Leaderboard
-        </h1>
-        <p className="text-muted-foreground">
-          Track competitive rankings with ELO rating system
-        </p>
+      {/* Header with Login Button */}
+      <div className="flex justify-between items-start">
+        <div className="text-center space-y-2 flex-1">
+          <h1 className="text-4xl font-bold flex items-center justify-center gap-2">
+            <Trophy className="h-8 w-8 text-yellow-500" />
+            ELO Leaderboard
+          </h1>
+          <p className="text-muted-foreground">
+            Track competitive rankings with ELO rating system
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <LoginButton />
+        </div>
       </div>
 
       {/* Main Content with Toggle */}
