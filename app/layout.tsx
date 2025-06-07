@@ -3,6 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { Toaster } from "@/components/ui/toaster";
+import { getAllFontVariables } from "@/lib/fonts";
 
 export const metadata: Metadata = {
   title: "ELO Leaderboard",
@@ -16,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
+      <body className={`${getAllFontVariables()} font-serif`}>
         <ThemeProvider attribute="class" enableSystem disableTransitionOnChange>
           <QueryProvider>{children}</QueryProvider>
           <Toaster />

@@ -2,8 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Font family is now handled by Next.js font system in layout.tsx */
+
+/* Active font CSS variables - controlled by lib/fonts.ts */
+:root {
+  --font-active: var(
+    --font-ibm-plex-serif
+  ); /* This will be the default fallback */
+}
+
+/* Apply the active font */
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ibm-plex-serif), var(--font-literata),
+    var(--font-source-serif-4), var(--font-tinos),
+    var(--font-cormorant-garamond), Georgia, Times, serif;
 }
 
 @layer utilities {
