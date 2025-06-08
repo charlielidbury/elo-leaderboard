@@ -1,8 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { playersQuery, registerGameMutation } from "@/lib/backend";
+import {
+  playersQuery,
+  registerGameMutation,
+  currentPlayerQuery,
+} from "@/lib/backend";
 import { toast } from "@/hooks/use-toast";
 import { type Player } from "@/lib/database";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Dialog,
   DialogContent,
@@ -55,7 +60,7 @@ function PlayerSelector({
             value={player.id}
             disabled={player.id === disabledPlayerId}
           >
-            {player.name} ({player.rating})
+            {player.name} ({Math.round(player.rating)})
           </SelectItem>
         ))}
       </SelectContent>
@@ -63,12 +68,118 @@ function PlayerSelector({
   );
 }
 
+interface OpponentSelectStageProps {
+  currentUser: Player;
+  opponent: Player | null;
+  setOpponent: (player: Player | null) => void;
+}
+
+function OpponentSelectStage({
+  currentUser,
+  opponent,
+  setOpponent,
+}: OpponentSelectStageProps) {
+  return (
+    <div className="space-y-8">
+      <h2 className="text-3xl font-bold text-center">Select Opponent</h2>
+      <div className="flex items-center gap-8">
+        {/* Current User */}
+        <div className="flex-1 space-y-4">
+          <div className="text-2xl h-16 flex items-center justify-center bg-muted rounded-md border">
+            {currentUser.name} ({Math.round(currentUser.rating)})
+          </div>
+        </div>
+
+        {/* VS */}
+        <div className="flex-shrink-0 px-8">
+          <div className="text-2xl font-bold text-muted-foreground">VS</div>
+        </div>
+
+        {/* Opponent */}
+        <div className="flex-1 space-y-4">
+          <PlayerSelector
+            value={opponent?.id || ""}
+            onValueChange={setOpponent}
+            disabledPlayerId={currentUser.id}
+            placeholder="Select Opponent"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface ResultStageProps {
+  currentUser: Player;
+  opponent: Player;
+  winner: Player | null;
+  setWinner: (winner: Player | null) => void;
+  onSubmit: () => void;
+  isSubmitting: boolean;
+}
+
+function ResultStage({
+  currentUser,
+  opponent,
+  winner,
+  setWinner,
+  onSubmit,
+  isSubmitting,
+}: ResultStageProps) {
+  return (
+    <>
+      {/* Result Section */}
+      <div className="space-y-8">
+        <h2 className="text-3xl font-bold text-center">Result</h2>
+        <div className="flex gap-8 justify-center">
+          <Button
+            onClick={() => setWinner(currentUser)}
+            className="flex-1 max-w-48 h-16 text-xl font-semibold"
+            variant={winner === currentUser ? "default" : "outline"}
+          >
+            I Win
+          </Button>
+
+          <Button
+            onClick={() => setWinner(null)}
+            className="flex-1 max-w-36 h-16 text-xl font-semibold"
+            variant={winner === null ? "default" : "outline"}
+          >
+            Draw
+          </Button>
+
+          <Button
+            onClick={() => setWinner(opponent)}
+            className="flex-1 max-w-48 h-16 text-xl font-semibold"
+            variant={winner === opponent ? "default" : "outline"}
+          >
+            {opponent.name} Wins
+          </Button>
+        </div>
+      </div>
+
+      {/* Submit Button */}
+      <div className="flex justify-center">
+        <Button
+          onClick={onSubmit}
+          disabled={winner === null || isSubmitting}
+          className="w-64 h-16 text-2xl font-bold"
+          variant="default"
+        >
+          {isSubmitting ? "Submitting..." : "Submit Game"}
+        </Button>
+      </div>
+    </>
+  );
+}
+
 export default function RegisterGame() {
   const [isOpen, setIsOpen] = useState(false);
-  const [playerA, setPlayerA] = useState<Player | null>(null);
-  const [playerB, setPlayerB] = useState<Player | null>(null);
+  const [opponent, setOpponent] = useState<Player | null>(null);
   const [winner, setWinner] = useState<Player | null>(null);
 
+  const { user: authUser } = useAuth();
+  const currentUserPlayer = useQuery(currentPlayerQuery);
   const players = useQuery(playersQuery);
   const queryClient = useQueryClient();
 
@@ -78,8 +189,7 @@ export default function RegisterGame() {
       queryClient.invalidateQueries({ queryKey: ["games"] });
       queryClient.invalidateQueries({ queryKey: ["players"] });
       setIsOpen(false);
-      setPlayerA(null);
-      setPlayerB(null);
+      setOpponent(null);
       setWinner(null);
       toast({
         title: "Game added successfully!",
@@ -96,23 +206,23 @@ export default function RegisterGame() {
   });
 
   const handleSubmitGame = () => {
-    if (!playerA || !playerB) {
+    if (!currentUserPlayer.data || !opponent) {
       toast({
-        title: "Please select both players",
+        title: "Please select an opponent",
         variant: "destructive",
       });
       return;
     }
 
-    if (playerA.id === playerB.id) {
+    if (currentUserPlayer.data.id === opponent.id) {
       toast({
-        title: "Please select different players",
+        title: "You cannot play against yourself",
         variant: "destructive",
       });
       return;
     }
 
-    if (winner === null) {
+    if (winner === undefined) {
       toast({
         title: "Please select a result",
         variant: "destructive",
@@ -128,12 +238,45 @@ export default function RegisterGame() {
       return;
     }
 
+    // Map current user to Charlie or Rushil based on some logic
+    // For simplicity, let's always put current user as Charlie
     registerGameMut.mutate({
-      playerA,
-      playerB,
+      charlie: currentUserPlayer.data,
+      rushil: opponent,
       winner,
     });
   };
+
+  // Show loading state while fetching current user
+  if (!authUser) {
+    return (
+      <div className="flex items-center justify-center p-6 rounded-lg border-2 border-dashed border-muted-foreground/30">
+        <p className="text-muted-foreground">
+          Please sign in to register a game
+        </p>
+      </div>
+    );
+  }
+
+  if (currentUserPlayer.isLoading) {
+    return (
+      <div className="flex items-center justify-center p-6 rounded-lg border-2 border-dashed border-muted-foreground/30">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!currentUserPlayer.data) {
+    return (
+      <div className="flex items-center justify-center p-6 rounded-lg border-2 border-dashed border-muted-foreground/30">
+        <p className="text-muted-foreground">
+          Player profile not found. Please contact an admin.
+        </p>
+      </div>
+    );
+  }
+
+  const opponentSelected = opponent !== null;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -151,90 +294,24 @@ export default function RegisterGame() {
         </DialogHeader>
 
         <div className="flex-1 flex flex-col px-8 pb-8 space-y-12 max-w-6xl mx-auto w-full">
-          {/* Players Section */}
-          <div className="space-y-8">
-            <h2 className="text-3xl font-bold text-center">Players</h2>
-            <div className="flex items-center gap-8">
-              {/* Player A */}
-              <div className="flex-1 space-y-4">
-                <PlayerSelector
-                  value={playerA?.id || ""}
-                  onValueChange={setPlayerA}
-                  disabledPlayerId={playerB?.id}
-                  placeholder="Select Player A"
-                />
-              </div>
+          {/* Opponent Selection Stage */}
+          <OpponentSelectStage
+            currentUser={currentUserPlayer.data}
+            opponent={opponent}
+            setOpponent={setOpponent}
+          />
 
-              {/* VS */}
-              <div className="flex-shrink-0 px-8">
-                <div className="text-2xl font-bold text-muted-foreground">
-                  VS
-                </div>
-              </div>
-
-              {/* Player B */}
-              <div className="flex-1 space-y-4">
-                <PlayerSelector
-                  value={playerB?.id || ""}
-                  onValueChange={setPlayerB}
-                  disabledPlayerId={playerA?.id}
-                  placeholder="Select Player B"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Result Section */}
-          <div className="space-y-8">
-            <h2 className="text-3xl font-bold text-center">Result</h2>
-            <div className="flex gap-8 justify-center">
-              <Button
-                onClick={() => setWinner(playerA)}
-                disabled={!playerA || !playerB}
-                className="flex-1 max-w-48 h-16 text-xl font-semibold"
-                variant={winner === playerA ? "default" : "outline"}
-              >
-                {playerA?.name || "Left"} Wins
-              </Button>
-
-              <Button
-                onClick={() => setWinner(null)}
-                disabled={!playerA || !playerB}
-                className="flex-1 max-w-36 h-16 text-xl font-semibold"
-                variant={
-                  winner === null && playerA && playerB ? "default" : "outline"
-                }
-              >
-                Draw
-              </Button>
-
-              <Button
-                onClick={() => setWinner(playerB)}
-                disabled={!playerA || !playerB}
-                className="flex-1 max-w-48 h-16 text-xl font-semibold"
-                variant={winner === playerB ? "default" : "outline"}
-              >
-                {playerB?.name || "Right"} Wins
-              </Button>
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <div className="flex justify-center">
-            <Button
-              onClick={handleSubmitGame}
-              disabled={
-                !playerA ||
-                !playerB ||
-                winner === null ||
-                registerGameMut.isPending
-              }
-              className="w-64 h-16 text-2xl font-bold"
-              variant="default"
-            >
-              {registerGameMut.isPending ? "Submitting..." : "Submit Game"}
-            </Button>
-          </div>
+          {/* Result Stage - Only show when opponent is selected */}
+          {opponentSelected && (
+            <ResultStage
+              currentUser={currentUserPlayer.data}
+              opponent={opponent}
+              winner={winner}
+              setWinner={setWinner}
+              onSubmit={handleSubmitGame}
+              isSubmitting={registerGameMut.isPending}
+            />
+          )}
         </div>
       </DialogContent>
     </Dialog>

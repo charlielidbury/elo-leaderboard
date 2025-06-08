@@ -7,8 +7,8 @@ import RegisterGame from "@/components/register-game";
 function GameDisplay({ game }: { game: Game }) {
   const [isClicked, setIsClicked] = useState(false);
 
-  const playerAIsWinner = game.winner?.id === game.a.id;
-  const playerBIsWinner = game.winner?.id === game.b.id;
+  const charlieIsWinner = game.winner?.id === game.charlie.id;
+  const rushilIsWinner = game.winner?.id === game.rushil.id;
 
   return (
     <div
@@ -18,13 +18,13 @@ function GameDisplay({ game }: { game: Game }) {
     >
       {/* Left Player */}
       <div className="flex-1 text-left">
-        <div className="text-2xl font-bold">{game.a.name}</div>
+        <div className="text-2xl font-bold">{game.charlie.name}</div>
       </div>
 
       {/* Score in the middle */}
       <div className="flex-shrink-0 mx-8 text-center">
         <div className="text-2xl">
-          {playerAIsWinner ? "1" : "0"} - {playerBIsWinner ? "1" : "0"}
+          {charlieIsWinner ? "1" : "0"} - {rushilIsWinner ? "1" : "0"}
         </div>
         {isClicked && (
           <div className="text-xs text-muted-foreground/60 mt-2">
@@ -35,7 +35,7 @@ function GameDisplay({ game }: { game: Game }) {
 
       {/* Right Player */}
       <div className="flex-1 text-right">
-        <div className="text-2xl font-bold">{game.b.name}</div>
+        <div className="text-2xl font-bold">{game.rushil.name}</div>
       </div>
     </div>
   );

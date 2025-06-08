@@ -17,79 +17,87 @@ function calculateNewRating(
 }
 
 function calculateRatingChanges(
-  playerARating: number,
-  playerBRating: number,
+  charlieRating: number,
+  rushilRating: number,
   winnerId: string,
-  playerAId: string,
-  playerBId: string
+  charlieId: string,
+  rushilId: string
 ) {
-  const expectedScoreA = calculateExpectedScore(playerARating, playerBRating);
-  const expectedScoreB = calculateExpectedScore(playerBRating, playerARating);
-
-  const actualScoreA = winnerId === playerAId ? 1 : 0;
-  const actualScoreB = winnerId === playerBId ? 1 : 0;
-
-  const newRatingA = calculateNewRating(
-    playerARating,
-    expectedScoreA,
-    actualScoreA
+  const expectedScoreCharlie = calculateExpectedScore(
+    charlieRating,
+    rushilRating
   );
-  const newRatingB = calculateNewRating(
-    playerBRating,
-    expectedScoreB,
-    actualScoreB
+  const expectedScoreRushil = calculateExpectedScore(
+    rushilRating,
+    charlieRating
+  );
+
+  const actualScoreCharlie = winnerId === charlieId ? 1 : 0;
+  const actualScoreRushil = winnerId === rushilId ? 1 : 0;
+
+  const newRatingCharlie = calculateNewRating(
+    charlieRating,
+    expectedScoreCharlie,
+    actualScoreCharlie
+  );
+  const newRatingRushil = calculateNewRating(
+    rushilRating,
+    expectedScoreRushil,
+    actualScoreRushil
   );
 
   return {
-    playerA: {
-      before: playerARating,
-      after: newRatingA,
-      change: newRatingA - playerARating,
+    charlie: {
+      before: charlieRating,
+      after: newRatingCharlie,
+      change: newRatingCharlie - charlieRating,
     },
-    playerB: {
-      before: playerBRating,
-      after: newRatingB,
-      change: newRatingB - playerBRating,
+    rushil: {
+      before: rushilRating,
+      after: newRatingRushil,
+      change: newRatingRushil - rushilRating,
     },
   };
 }
 
 export function calculateNewRatingsForGame(
-  playerA: Player,
-  playerB: Player,
+  charlie: Player,
+  rushil: Player,
   winner: Player | null
 ) {
   if (winner === null) {
     // Handle draws - each player gets 0.5 actual score
-    const expectedScoreA = calculateExpectedScore(
-      playerA.rating,
-      playerB.rating
+    const expectedScoreCharlie = calculateExpectedScore(
+      charlie.rating,
+      rushil.rating
     );
-    const expectedScoreB = calculateExpectedScore(
-      playerB.rating,
-      playerA.rating
+    const expectedScoreRushil = calculateExpectedScore(
+      rushil.rating,
+      charlie.rating
     );
 
-    const newRatingA = playerA.rating + K_FACTOR * (0.5 - expectedScoreA);
-    const newRatingB = playerB.rating + K_FACTOR * (0.5 - expectedScoreB);
+    const newRatingCharlie =
+      charlie.rating + K_FACTOR * (0.5 - expectedScoreCharlie);
+    const newRatingRushil =
+      rushil.rating + K_FACTOR * (0.5 - expectedScoreRushil);
 
     return {
-      playerANewRating: newRatingA,
-      playerBNewRating: newRatingB,
+      charlieNewRating: newRatingCharlie,
+      rushilNewRating: newRatingRushil,
     };
   } else {
     // Handle wins/losses
     const ratingChanges = calculateRatingChanges(
-      playerA.rating,
-      playerB.rating,
+      charlie.rating,
+      rushil.rating,
       winner.id,
-      playerA.id,
-      playerB.id
+      charlie.id,
+      rushil.id
     );
 
     return {
-      playerANewRating: ratingChanges.playerA.after,
-      playerBNewRating: ratingChanges.playerB.after,
+      charlieNewRating: ratingChanges.charlie.after,
+      rushilNewRating: ratingChanges.rushil.after,
     };
   }
 }
@@ -113,40 +121,45 @@ export function calculatePlayerRatings(
 
   // Process each game to update ratings
   for (const game of sortedGames) {
-    const playerA = game.a;
-    const playerB = game.b;
+    const charlie = game.charlie;
+    const rushil = game.rushil;
     const winner = game.winner;
 
-    const playerARating = playerA.rating;
-    const playerBRating = playerB.rating;
+    const charlieRating = charlie.rating;
+    const rushilRating = rushil.rating;
 
     // Handle draws (winner is null)
     if (winner === null) {
       // For draws, each player gets 0.5 actual score
-      const expectedScoreA = calculateExpectedScore(
-        playerARating,
-        playerBRating
+      const expectedScoreCharlie = calculateExpectedScore(
+        charlieRating,
+        rushilRating
       );
-      const expectedScoreB = calculateExpectedScore(
-        playerBRating,
-        playerARating
+      const expectedScoreRushil = calculateExpectedScore(
+        rushilRating,
+        charlieRating
       );
 
-      playerA.rating = playerARating + K_FACTOR * (0.5 - expectedScoreA);
-      playerB.rating = playerBRating + K_FACTOR * (0.5 - expectedScoreB);
+      charlie.rating = charlieRating + K_FACTOR * (0.5 - expectedScoreCharlie);
+      rushil.rating = rushilRating + K_FACTOR * (0.5 - expectedScoreRushil);
     } else {
       // Normal win/loss case
       const ratingChanges = calculateRatingChanges(
-        playerARating,
-        playerBRating,
+        charlieRating,
+        rushilRating,
         winner?.id ?? "",
-        playerA.id,
-        playerB.id
+        charlie.id,
+        rushil.id
       );
 
-      playerA.rating = ratingChanges.playerA.after;
-      playerB.rating = ratingChanges.playerB.after;
+      charlie.rating = ratingChanges.charlie.after;
+      rushil.rating = ratingChanges.rushil.after;
     }
+  }
+
+  // Round ratings to nearest integer
+  for (const player of players) {
+    player.rating = Math.round(player.rating);
   }
 
   return players;

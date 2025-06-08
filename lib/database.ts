@@ -16,7 +16,7 @@ export type Player = UncheckedPlayer & {
 export type UnpopulatedGame = Database["public"]["Tables"]["games"]["Row"];
 
 export type Game = UnpopulatedGame & {
-  a: Player;
-  b: Player;
+  charlie: Player;
+  rushil: Player;
   winner?: Player;
 };
