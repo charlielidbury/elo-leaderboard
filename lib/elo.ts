@@ -1,7 +1,7 @@
 import { type Player, type Game, UncheckedPlayer } from "@/lib/database";
 
 // ELO Rating System Implementation
-const INITIAL_RATING = 1200;
+const INITIAL_RATING = 1000;
 const K_FACTOR = 32;
 
 function calculateExpectedScore(ratingA: number, ratingB: number): number {
@@ -17,88 +17,93 @@ function calculateNewRating(
 }
 
 function calculateRatingChanges(
-  player1Rating: number,
-  player2Rating: number,
+  playerARating: number,
+  playerBRating: number,
   winnerId: string,
-  player1Id: string,
-  player2Id: string
+  playerAId: string,
+  playerBId: string
 ) {
-  const expectedScore1 = calculateExpectedScore(player1Rating, player2Rating);
-  const expectedScore2 = calculateExpectedScore(player2Rating, player1Rating);
+  const expectedScoreA = calculateExpectedScore(playerARating, playerBRating);
+  const expectedScoreB = calculateExpectedScore(playerBRating, playerARating);
 
-  const actualScore1 = winnerId === player1Id ? 1 : 0;
-  const actualScore2 = winnerId === player2Id ? 1 : 0;
+  const actualScoreA = winnerId === playerAId ? 1 : 0;
+  const actualScoreB = winnerId === playerBId ? 1 : 0;
 
-  const newRating1 = calculateNewRating(
-    player1Rating,
-    expectedScore1,
-    actualScore1
+  const newRatingA = calculateNewRating(
+    playerARating,
+    expectedScoreA,
+    actualScoreA
   );
-  const newRating2 = calculateNewRating(
-    player2Rating,
-    expectedScore2,
-    actualScore2
+  const newRatingB = calculateNewRating(
+    playerBRating,
+    expectedScoreB,
+    actualScoreB
   );
 
   return {
-    player1: {
-      before: player1Rating,
-      after: newRating1,
-      change: newRating1 - player1Rating,
+    playerA: {
+      before: playerARating,
+      after: newRatingA,
+      change: newRatingA - playerARating,
     },
-    player2: {
-      before: player2Rating,
-      after: newRating2,
-      change: newRating2 - player2Rating,
+    playerB: {
+      before: playerBRating,
+      after: newRatingB,
+      change: newRatingB - playerBRating,
     },
   };
 }
 
 export function calculateNewRatingsForGame(
-  player1Rating: number,
-  player2Rating: number,
-  winnerId: string | null,
-  player1Id: string,
-  player2Id: string
+  playerA: Player,
+  playerB: Player,
+  winner: Player | null
 ) {
-  if (winnerId === null) {
+  if (winner === null) {
     // Handle draws - each player gets 0.5 actual score
-    const expectedScore1 = calculateExpectedScore(player1Rating, player2Rating);
-    const expectedScore2 = calculateExpectedScore(player2Rating, player1Rating);
+    const expectedScoreA = calculateExpectedScore(
+      playerA.rating,
+      playerB.rating
+    );
+    const expectedScoreB = calculateExpectedScore(
+      playerB.rating,
+      playerA.rating
+    );
 
-    const newRating1 = player1Rating + K_FACTOR * (0.5 - expectedScore1);
-    const newRating2 = player2Rating + K_FACTOR * (0.5 - expectedScore2);
+    const newRatingA = playerA.rating + K_FACTOR * (0.5 - expectedScoreA);
+    const newRatingB = playerB.rating + K_FACTOR * (0.5 - expectedScoreB);
 
     return {
-      player1NewRating: newRating1,
-      player2NewRating: newRating2,
+      playerANewRating: newRatingA,
+      playerBNewRating: newRatingB,
     };
   } else {
     // Handle wins/losses
     const ratingChanges = calculateRatingChanges(
-      player1Rating,
-      player2Rating,
-      winnerId,
-      player1Id,
-      player2Id
+      playerA.rating,
+      playerB.rating,
+      winner.id,
+      playerA.id,
+      playerB.id
     );
 
     return {
-      player1NewRating: ratingChanges.player1.after,
-      player2NewRating: ratingChanges.player2.after,
+      playerANewRating: ratingChanges.playerA.after,
+      playerBNewRating: ratingChanges.playerB.after,
     };
   }
 }
 
+// In-place updates players with their ratings
 export function calculatePlayerRatings(
-  players: UncheckedPlayer[],
+  uncheckedPlayers: UncheckedPlayer[],
   games: Game[]
 ): Player[] {
-  // Initialize all players with starting rating
-  const playerRatings: Record<string, number> = {};
-  for (const player of players) {
-    playerRatings[player.id] = INITIAL_RATING;
+  // Add an initial rating to each player
+  for (const player of uncheckedPlayers) {
+    (player as any).rating = INITIAL_RATING;
   }
+  const players = uncheckedPlayers as Player[]; // tell typescript that we have populated the rating field
 
   // Sort games by creation date to process them chronologically
   const sortedGames = [...games].sort(
@@ -108,49 +113,41 @@ export function calculatePlayerRatings(
 
   // Process each game to update ratings
   for (const game of sortedGames) {
-    const player1Id = game.a;
-    const player2Id = game.b;
-    const winnerId = game.winner;
+    const playerA = game.a;
+    const playerB = game.b;
+    const winner = game.winner;
 
-    const player1Rating = playerRatings[player1Id];
-    const player2Rating = playerRatings[player2Id];
+    const playerARating = playerA.rating;
+    const playerBRating = playerB.rating;
 
     // Handle draws (winner is null)
-    if (winnerId === null) {
+    if (winner === null) {
       // For draws, each player gets 0.5 actual score
-      const expectedScore1 = calculateExpectedScore(
-        player1Rating,
-        player2Rating
+      const expectedScoreA = calculateExpectedScore(
+        playerARating,
+        playerBRating
       );
-      const expectedScore2 = calculateExpectedScore(
-        player2Rating,
-        player1Rating
+      const expectedScoreB = calculateExpectedScore(
+        playerBRating,
+        playerARating
       );
 
-      playerRatings[player1Id] =
-        player1Rating + K_FACTOR * (0.5 - expectedScore1);
-      playerRatings[player2Id] =
-        player2Rating + K_FACTOR * (0.5 - expectedScore2);
+      playerA.rating = playerARating + K_FACTOR * (0.5 - expectedScoreA);
+      playerB.rating = playerBRating + K_FACTOR * (0.5 - expectedScoreB);
     } else {
       // Normal win/loss case
       const ratingChanges = calculateRatingChanges(
-        player1Rating,
-        player2Rating,
-        winnerId,
-        player1Id,
-        player2Id
+        playerARating,
+        playerBRating,
+        winner?.id ?? "",
+        playerA.id,
+        playerB.id
       );
 
-      playerRatings[player1Id] = ratingChanges.player1.after;
-      playerRatings[player2Id] = ratingChanges.player2.after;
+      playerA.rating = ratingChanges.playerA.after;
+      playerB.rating = ratingChanges.playerB.after;
     }
   }
 
-  // Return players with their computed ratings
-  const result: Player[] = [];
-  for (const player of players) {
-    // This is the moment an unchecked player becomes a checked player
-    result.push({ ...player, rating: playerRatings[player.id] });
-  }
-  return result;
+  return players;
 }

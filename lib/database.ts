@@ -13,8 +13,10 @@ export type Player = UncheckedPlayer & {
   rating: number;
 };
 
-export type Game = Database["public"]["Tables"]["games"]["Row"] & {
-  player1?: Player;
-  player2?: Player;
+export type UnpopulatedGame = Database["public"]["Tables"]["games"]["Row"];
+
+export type Game = UnpopulatedGame & {
+  a: Player;
+  b: Player;
   winner?: Player;
 };

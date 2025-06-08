@@ -11,50 +11,50 @@ export type Database = {
     Tables: {
       games: {
         Row: {
-          a: string;
+          a_id: string;
           a_rating_check: number;
-          b: string;
+          b_id: string;
           b_rating_check: number;
           created_at: string;
           id: string;
-          winner: string | null;
+          winner_id: string | null;
         };
         Insert: {
-          a: string;
+          a_id: string;
           a_rating_check: number;
-          b: string;
+          b_id: string;
           b_rating_check: number;
           created_at?: string;
           id?: string;
-          winner?: string | null;
+          winner_id?: string | null;
         };
         Update: {
-          a?: string;
+          a_id?: string;
           a_rating_check?: number;
-          b?: string;
+          b_id?: string;
           b_rating_check?: number;
           created_at?: string;
           id?: string;
-          winner?: string | null;
+          winner_id?: string | null;
         };
         Relationships: [
           {
             foreignKeyName: "games_player1_id_fkey";
-            columns: ["a"];
+            columns: ["a_id"];
             isOneToOne: false;
             referencedRelation: "players";
             referencedColumns: ["id"];
           },
           {
             foreignKeyName: "games_player2_id_fkey";
-            columns: ["b"];
+            columns: ["b_id"];
             isOneToOne: false;
             referencedRelation: "players";
             referencedColumns: ["id"];
           },
           {
             foreignKeyName: "games_winner_id_fkey";
-            columns: ["winner"];
+            columns: ["winner_id"];
             isOneToOne: false;
             referencedRelation: "players";
             referencedColumns: ["id"];

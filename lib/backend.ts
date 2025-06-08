@@ -1,34 +1,61 @@
-import { supabase, type Player, type Game } from "@/lib/database";
+import {
+  supabase,
+  type Player,
+  type Game,
+  UnpopulatedGame,
+  UncheckedPlayer,
+} from "@/lib/database";
 import { calculateNewRatingsForGame, calculatePlayerRatings } from "@/lib/elo";
+
+async function getPlayersGames(): Promise<[Player[], Game[]]> {
+  // Fetch all players
+  const { data: uncheckedPlayers, error: playersError } = await supabase
+    .from("players")
+    .select("*");
+
+  if (playersError) throw playersError;
+
+  // Fetch all games
+  const { data: unpopulatedGames, error: gamesError } = await supabase
+    .from("games")
+    .select("*")
+    .order("created_at", { ascending: true });
+
+  if (gamesError) throw gamesError;
+
+  //
+  const playersMap: Map<string, UncheckedPlayer> = new Map(
+    uncheckedPlayers?.map((player) => [player.id, player])
+  );
+  const populateGame = (game: UnpopulatedGame): Game => ({
+    ...game,
+    winner: game.winner_id
+      ? (playersMap.get(game.winner_id) as Player)
+      : undefined, // type assertions are required because we havent checked the players yet
+    a: playersMap.get(game.a_id) as Player,
+    b: playersMap.get(game.b_id) as Player,
+  });
+  const games = unpopulatedGames.map(populateGame);
+
+  // Calculate current ratings using ELO system
+  // Type cast to satisfy the function signature - calculatePlayerRatings only uses basic fields
+  const players = calculatePlayerRatings(
+    uncheckedPlayers,
+    games.map(populateGame)
+  );
+
+  // Sort by current rating (descending)
+  players.sort((a, b) => b.rating - a.rating);
+
+  return [players, games];
+}
 
 // Players query
 export const playersQuery = {
   queryKey: ["players"],
   queryFn: async (): Promise<Player[]> => {
-    // Fetch all players
-    const { data: players, error: playersError } = await supabase
-      .from("players")
-      .select("*");
-
-    if (playersError) throw playersError;
-
-    // Fetch all games
-    const { data: games, error: gamesError } = await supabase
-      .from("games")
-      .select("*")
-      .order("created_at", { ascending: true });
-
-    if (gamesError) throw gamesError;
-
-    // Calculate current ratings using ELO system
-    // Type cast to satisfy the function signature - calculatePlayerRatings only uses basic fields
-    const playersWithRatings = calculatePlayerRatings(
-      (players || []) as Player[],
-      (games || []) as Game[]
-    );
-
-    // Sort by current rating (descending)
-    return playersWithRatings.sort((a, b) => b.rating - a.rating);
+    const [players, games] = await getPlayersGames();
+    return players;
   },
 };
 
@@ -36,63 +63,37 @@ export const playersQuery = {
 export const gamesQuery = {
   queryKey: ["games"],
   queryFn: async (): Promise<Game[]> => {
-    const { data: games, error } = await supabase
-      .from("games")
-      .select(
-        `
-        *,
-        player1:players!games_player1_id_fkey(*),
-        player2:players!games_player2_id_fkey(*),
-        winner_player:players!games_winner_id_fkey(*)
-      `
-      )
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-
-    // Transform the data to match the expected format
-    const gamesWithPlayers =
-      games?.map((game) => ({
-        ...game,
-        player1: Array.isArray(game.player1) ? game.player1[0] : game.player1,
-        player2: Array.isArray(game.player2) ? game.player2[0] : game.player2,
-        winner: Array.isArray(game.winner_player)
-          ? game.winner_player[0]
-          : game.winner_player,
-      })) || [];
-
-    return gamesWithPlayers as Game[];
+    const [players, games] = await getPlayersGames();
+    return games;
   },
 };
 
 // Register game mutation
 export const registerGameMutation = {
   mutationFn: async ({
-    player1,
-    player2,
+    playerA,
+    playerB,
     winner,
   }: {
-    player1: Player;
-    player2: Player;
+    playerA: Player;
+    playerB: Player;
     winner: Player | null;
   }) => {
     // Calculate new ratings based on game outcome
-    const { player1NewRating, player2NewRating } = calculateNewRatingsForGame(
-      player1.rating_check,
-      player2.rating_check,
-      winner?.id || null,
-      player1.id,
-      player2.id
+    const { playerANewRating, playerBNewRating } = calculateNewRatingsForGame(
+      playerA,
+      playerB,
+      winner
     );
 
     const { data, error } = await supabase
       .from("games")
       .insert({
-        a: player1.id,
-        b: player2.id,
+        a_id: playerA.id,
+        b_id: playerB.id,
         winner: winner?.id,
-        a_rating_check: player1NewRating,
-        b_rating_check: player2NewRating,
+        a_rating_check: playerANewRating,
+        b_rating_check: playerBNewRating,
       })
       .select();
 

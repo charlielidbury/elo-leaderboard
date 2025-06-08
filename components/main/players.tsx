@@ -1,11 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
-import { playersQuery, gamesQuery } from "@/lib/backend";
-import { calculatePlayerRatings, type PlayerWithRating } from "@/lib/elo";
-import { useMemo } from "react";
+import { playersQuery } from "@/lib/backend";
+import { type Player } from "@/lib/database";
 
 interface PlayerDisplayProps {
-  player: PlayerWithRating;
+  player: Player;
   index: number;
 }
 
@@ -32,14 +31,8 @@ function PlayerDisplay({ player, index }: PlayerDisplayProps) {
 
 export default function Players() {
   const players = useQuery(playersQuery);
-  const games = useQuery(gamesQuery);
 
-  const playersWithRatings = useMemo(() => {
-    if (!players.data || !games.data) return [];
-    return calculatePlayerRatings(players.data, games.data);
-  }, [players.data, games.data]);
-
-  if (players.isLoading || games.isLoading) {
+  if (players.isLoading) {
     return (
       <p className="text-center text-muted-foreground py-8">
         Loading players...
@@ -47,7 +40,7 @@ export default function Players() {
     );
   }
 
-  if (players.isError || games.isError) {
+  if (players.isError) {
     return (
       <p className="text-center text-muted-foreground py-8">
         Error loading players. Please try again.
@@ -55,7 +48,7 @@ export default function Players() {
     );
   }
 
-  if (playersWithRatings.length === 0) {
+  if (players.data?.length === 0) {
     return (
       <p className="text-center text-muted-foreground py-8">
         No players yet. Add some players to get started!
@@ -65,9 +58,8 @@ export default function Players() {
 
   return (
     <div className="space-y-2">
-      {playersWithRatings
-        .sort((a, b) => b.rating - a.rating)
-        .map((player, index) => (
+      {players.data &&
+        players.data.map((player, index) => (
           <PlayerDisplay key={player.id} player={player} index={index} />
         ))}
     </div>

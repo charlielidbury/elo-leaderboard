@@ -55,7 +55,7 @@ function PlayerSelector({
             value={player.id}
             disabled={player.id === disabledPlayerId}
           >
-            {player.name} ({player.rating_check})
+            {player.name} ({player.rating})
           </SelectItem>
         ))}
       </SelectContent>
@@ -65,8 +65,8 @@ function PlayerSelector({
 
 export default function RegisterGame() {
   const [isOpen, setIsOpen] = useState(false);
-  const [player1, setPlayer1] = useState<Player | null>(null);
-  const [player2, setPlayer2] = useState<Player | null>(null);
+  const [playerA, setPlayerA] = useState<Player | null>(null);
+  const [playerB, setPlayerB] = useState<Player | null>(null);
   const [winner, setWinner] = useState<Player | null>(null);
 
   const players = useQuery(playersQuery);
@@ -78,8 +78,8 @@ export default function RegisterGame() {
       queryClient.invalidateQueries({ queryKey: ["games"] });
       queryClient.invalidateQueries({ queryKey: ["players"] });
       setIsOpen(false);
-      setPlayer1(null);
-      setPlayer2(null);
+      setPlayerA(null);
+      setPlayerB(null);
       setWinner(null);
       toast({
         title: "Game added successfully!",
@@ -96,7 +96,7 @@ export default function RegisterGame() {
   });
 
   const handleSubmitGame = () => {
-    if (!player1 || !player2) {
+    if (!playerA || !playerB) {
       toast({
         title: "Please select both players",
         variant: "destructive",
@@ -104,7 +104,7 @@ export default function RegisterGame() {
       return;
     }
 
-    if (player1.id === player2.id) {
+    if (playerA.id === playerB.id) {
       toast({
         title: "Please select different players",
         variant: "destructive",
@@ -129,8 +129,8 @@ export default function RegisterGame() {
     }
 
     registerGameMut.mutate({
-      player1,
-      player2,
+      playerA,
+      playerB,
       winner,
     });
   };
@@ -155,13 +155,13 @@ export default function RegisterGame() {
           <div className="space-y-8">
             <h2 className="text-3xl font-bold text-center">Players</h2>
             <div className="flex items-center gap-8">
-              {/* Player 1 */}
+              {/* Player A */}
               <div className="flex-1 space-y-4">
                 <PlayerSelector
-                  value={player1?.id || ""}
-                  onValueChange={setPlayer1}
-                  disabledPlayerId={player2?.id}
-                  placeholder="Select Player 1"
+                  value={playerA?.id || ""}
+                  onValueChange={setPlayerA}
+                  disabledPlayerId={playerB?.id}
+                  placeholder="Select Player A"
                 />
               </div>
 
@@ -172,13 +172,13 @@ export default function RegisterGame() {
                 </div>
               </div>
 
-              {/* Player 2 */}
+              {/* Player B */}
               <div className="flex-1 space-y-4">
                 <PlayerSelector
-                  value={player2?.id || ""}
-                  onValueChange={setPlayer2}
-                  disabledPlayerId={player1?.id}
-                  placeholder="Select Player 2"
+                  value={playerB?.id || ""}
+                  onValueChange={setPlayerB}
+                  disabledPlayerId={playerA?.id}
+                  placeholder="Select Player B"
                 />
               </div>
             </div>
@@ -189,32 +189,32 @@ export default function RegisterGame() {
             <h2 className="text-3xl font-bold text-center">Result</h2>
             <div className="flex gap-8 justify-center">
               <Button
-                onClick={() => setWinner(player1)}
-                disabled={!player1 || !player2}
+                onClick={() => setWinner(playerA)}
+                disabled={!playerA || !playerB}
                 className="flex-1 max-w-48 h-16 text-xl font-semibold"
-                variant={winner === player1 ? "default" : "outline"}
+                variant={winner === playerA ? "default" : "outline"}
               >
-                {player1?.name || "Left"} Wins
+                {playerA?.name || "Left"} Wins
               </Button>
 
               <Button
                 onClick={() => setWinner(null)}
-                disabled={!player1 || !player2}
+                disabled={!playerA || !playerB}
                 className="flex-1 max-w-36 h-16 text-xl font-semibold"
                 variant={
-                  winner === null && player1 && player2 ? "default" : "outline"
+                  winner === null && playerA && playerB ? "default" : "outline"
                 }
               >
                 Draw
               </Button>
 
               <Button
-                onClick={() => setWinner(player2)}
-                disabled={!player1 || !player2}
+                onClick={() => setWinner(playerB)}
+                disabled={!playerA || !playerB}
                 className="flex-1 max-w-48 h-16 text-xl font-semibold"
-                variant={winner === player2 ? "default" : "outline"}
+                variant={winner === playerB ? "default" : "outline"}
               >
-                {player2?.name || "Right"} Wins
+                {playerB?.name || "Right"} Wins
               </Button>
             </div>
           </div>
@@ -224,8 +224,8 @@ export default function RegisterGame() {
             <Button
               onClick={handleSubmitGame}
               disabled={
-                !player1 ||
-                !player2 ||
+                !playerA ||
+                !playerB ||
                 winner === null ||
                 registerGameMut.isPending
               }
