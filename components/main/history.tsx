@@ -6,36 +6,44 @@ import { type Game } from "@/lib/database";
 function GameDisplay({ game }: { game: Game }) {
   const [isClicked, setIsClicked] = useState(false);
 
-  const charlieIsWinner = game.winner?.id === game.charlie.id;
-  const rushilIsWinner = game.winner?.id === game.rushil.id;
-
   return (
     <div
       key={game.id}
-      className="flex items-center justify-between p-6 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
+      className="rounded-lg border cursor-pointer bg-muted"
       onClick={() => setIsClicked(!isClicked)}
     >
-      {/* Left Player */}
-      <div className="flex-1 text-left">
-        <div className="text-2xl font-bold">{game.charlie.name}</div>
+      {/* Main row content */}
+      <div className="flex items-center justify-between p-4">
+        {/* Left Player */}
+        <div className="flex-1 text-left">
+          <div className="text-xl font-semibold">{game.charlie.name}</div>
+        </div>
+
+        {/* Score in the middle */}
+        <div className="flex-shrink-0 mx-8 text-center">
+          <div className="text-xl font-bold">
+            {game.winner === game.charlie
+              ? "1 - 0"
+              : game.winner === null
+              ? "½ - ½"
+              : "0 - 1"}
+          </div>
+        </div>
+
+        {/* Right Player */}
+        <div className="flex-1 text-right">
+          <div className="text-xl font-semibold">{game.rushil.name}</div>
+        </div>
       </div>
 
-      {/* Score in the middle */}
-      <div className="flex-shrink-0 mx-8 text-center">
-        <div className="text-2xl">
-          {charlieIsWinner ? "1" : "0"} - {rushilIsWinner ? "1" : "0"}
-        </div>
-        {isClicked && (
-          <div className="text-xs text-muted-foreground/60 mt-2">
+      {/* Expanded content */}
+      {isClicked && (
+        <div className="px-4 pb-4 pt-0 text-center">
+          <div className="text-xs text-muted-foreground/60">
             {game.created_at && new Date(game.created_at).toLocaleDateString()}
           </div>
-        )}
-      </div>
-
-      {/* Right Player */}
-      <div className="flex-1 text-right">
-        <div className="text-2xl font-bold">{game.rushil.name}</div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -58,7 +66,7 @@ export default function Games() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {games.data?.length === 0 ? (
         <p className="text-center text-muted-foreground py-8">
           No games recorded yet.

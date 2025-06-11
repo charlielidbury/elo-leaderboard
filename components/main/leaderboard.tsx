@@ -12,7 +12,7 @@ function PlayerDisplay({ player, index }: PlayerDisplayProps) {
   return (
     <div
       key={player.id}
-      className="flex items-center justify-between p-4 rounded-lg border"
+      className="flex items-center justify-between p-4 rounded-lg border bg-muted"
     >
       <div className="flex items-center gap-4">
         <Badge variant={index === 0 ? "default" : "secondary"}>

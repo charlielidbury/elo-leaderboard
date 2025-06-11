@@ -45,6 +45,11 @@ async function getPlayersGames(): Promise<[Player[], Game[]]> {
   // Sort by current rating (descending)
   players.sort((a, b) => b.rating - a.rating);
 
+  games.sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
   return [players, games];
 }
 
