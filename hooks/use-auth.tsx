@@ -5,7 +5,14 @@ import { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/database";
 import { toast } from "./use-toast";
 
-export function useAuth() {
+export function useAuth(): {
+  user: User | null;
+  loading: boolean;
+  signInWithGoogle: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<boolean>;
+  signUp: (email: string, password: string) => Promise<boolean>;
+  signOut: () => Promise<void>;
+} {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 

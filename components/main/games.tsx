@@ -60,8 +60,6 @@ export default function Games() {
 
   return (
     <div className="space-y-4">
-      <RegisterGame />
-
       {games.data?.length === 0 ? (
         <p className="text-center text-muted-foreground py-8">
           No games recorded yet.

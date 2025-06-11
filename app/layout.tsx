@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { getAllFontVariables } from "@/lib/fonts";
+import { PlayerSetupModal } from "@/components/player-setup-modal";
 
 export const metadata: Metadata = {
   title: "ELO Leaderboard",
@@ -20,6 +21,7 @@ export default function RootLayout({
       <body className={`${getAllFontVariables()} font-serif`}>
         <ThemeProvider attribute="class" enableSystem disableTransitionOnChange>
           <QueryProvider>{children}</QueryProvider>
+          <PlayerSetupModal />
           <Toaster />
         </ThemeProvider>
       </body>

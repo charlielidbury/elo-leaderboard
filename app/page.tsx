@@ -1,17 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Trophy, History } from "lucide-react";
+import { Trophy, History, Plus } from "lucide-react";
 import Players from "@/components/main/players";
 import Games from "@/components/main/games";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoginButton } from "@/components/login-button";
+import RegisterGame from "@/components/register-game";
+import { useTab } from "@/hooks/use-tab";
 
 export default function EloLeaderboard() {
-  const [currentView, setCurrentView] = useState<"rankings" | "games">(
-    "rankings"
-  );
+  const { currentTab, setTab } = useTab();
 
   return (
     <div className="container mx-auto p-6 space-y-8">
@@ -31,43 +30,41 @@ export default function EloLeaderboard() {
         </div>
       </div>
 
-      {/* Main Content with Toggle */}
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {currentView === "rankings" ? (
-            <>
-              <Trophy className="h-5 w-5" />
-              Current Rankings
-            </>
-          ) : (
-            <>
-              <History className="h-5 w-5" />
-              Recent Games
-            </>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant={currentView === "rankings" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setCurrentView("rankings")}
-          >
-            <Trophy className="h-4 w-4 mr-1" />
-            Rankings
-          </Button>
-          <Button
-            variant={currentView === "games" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setCurrentView("games")}
-          >
-            <History className="h-4 w-4 mr-1" />
-            Games
-          </Button>
-        </div>
+      {/* Navigation Buttons */}
+      <div className="flex items-center justify-center gap-4">
+        <Button
+          variant={currentTab === "history" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setTab("history")}
+          className="gap-2"
+        >
+          <History className="h-4 w-4" />
+          History
+        </Button>
+        <Button
+          variant={currentTab === "leaderboard" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setTab("leaderboard")}
+          className="gap-2"
+        >
+          <Trophy className="h-4 w-4" />
+          Leaderboard
+        </Button>
+        <Button
+          variant={currentTab === "addgame" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setTab("addgame")}
+          className="gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Add Game
+        </Button>
       </div>
 
-      {currentView === "rankings" ? <Players /> : <Games />}
+      {/* Content based on current view */}
+      {currentTab === "history" && <Games />}
+      {currentTab === "leaderboard" && <Players />}
+      {currentTab === "addgame" && <RegisterGame />}
 
       {/* Floating Theme Toggle */}
       <ThemeToggle />

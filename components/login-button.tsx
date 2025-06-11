@@ -60,13 +60,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-none w-screen h-screen m-0 rounded-none flex flex-col bg-gradient-to-br from-background to-muted/20">
         <DialogHeader className="text-center pt-12 pb-8">
-          <DialogTitle className="text-4xl font-bold mb-2">
-            Welcome to ELO Leaderboard
-          </DialogTitle>
-          <p className="text-lg text-muted-foreground max-w-md mx-auto">
-            Sign in to track your competitive rankings and challenge other
-            players
-          </p>
+          <DialogTitle className="text-4xl font-bold mb-2"></DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 flex items-start justify-center pt-8 pb-16">

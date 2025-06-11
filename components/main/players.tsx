@@ -19,11 +19,11 @@ function PlayerDisplay({ player, index }: PlayerDisplayProps) {
           #{index + 1}
         </Badge>
         <div>
-          <h3 className="font-semibold">{player.name}</h3>
+          <h3 className="text-xl font-semibold">{player.name}</h3>
         </div>
       </div>
       <div className="text-right">
-        <div className="text-2xl font-bold">{Math.round(player.rating)}</div>
+        <div className="text-xl font-bold">{Math.round(player.rating)}</div>
       </div>
     </div>
   );

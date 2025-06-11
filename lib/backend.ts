@@ -48,41 +48,6 @@ async function getPlayersGames(): Promise<[Player[], Game[]]> {
   return [players, games];
 }
 
-// Get current user's player record
-export const currentPlayerQuery = {
-  queryKey: ["currentPlayerQuery"],
-  queryFn: async (): Promise<Player | null> => {
-    // Get current auth user
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !authUser) {
-      return null;
-    }
-
-    // Get all players to find the current user's player record
-    const [players] = await getPlayersGames();
-
-    // Try to match by email first (assuming player name might be email or email prefix)
-    const userEmail = authUser.email;
-    const userName =
-      authUser.user_metadata?.full_name || authUser.email?.split("@")[0];
-
-    // Find player by matching name with email or user metadata
-    const currentPlayer = players.find(
-      (player) =>
-        player.name.toLowerCase() === userEmail?.toLowerCase() ||
-        player.name.toLowerCase() === userName?.toLowerCase() ||
-        player.name.toLowerCase() ===
-          authUser.email?.split("@")[0]?.toLowerCase()
-    );
-
-    return currentPlayer || null;
-  },
-};
-
 // Players query
 export const playersQuery = {
   queryKey: ["players"],
