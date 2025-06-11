@@ -2,11 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Trophy, History, Plus } from "lucide-react";
-import Players from "@/components/main/players";
-import Games from "@/components/main/games";
+import Players from "@/components/main/leaderboard";
+import Games from "@/components/main/history";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoginButton } from "@/components/login-button";
-import RegisterGame from "@/components/register-game";
+import RegisterGame from "@/components/main/add-game";
 import { useTab } from "@/hooks/use-tab";
 
 export default function EloLeaderboard() {

@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { gamesQuery } from "@/lib/backend";
 import { useState } from "react";
 import { type Game } from "@/lib/database";
-import RegisterGame from "@/components/register-game";
 
 function GameDisplay({ game }: { game: Game }) {
   const [isClicked, setIsClicked] = useState(false);
