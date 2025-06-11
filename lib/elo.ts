@@ -4,102 +4,25 @@ import { type Player, type Game, UncheckedPlayer } from "@/lib/database";
 const INITIAL_RATING = 1000;
 const K_FACTOR = 32;
 
-function calculateExpectedScore(ratingA: number, ratingB: number): number {
-  return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
-}
-
-function calculateNewRating(
-  currentRating: number,
-  expectedScore: number,
-  actualScore: number
-): number {
-  return currentRating + K_FACTOR * (actualScore - expectedScore);
-}
-
-function calculateRatingChanges(
-  charlieRating: number,
-  rushilRating: number,
-  winnerId: string,
-  charlieId: string,
-  rushilId: string
-) {
-  const expectedScoreCharlie = calculateExpectedScore(
-    charlieRating,
-    rushilRating
-  );
-  const expectedScoreRushil = calculateExpectedScore(
-    rushilRating,
-    charlieRating
-  );
-
-  const actualScoreCharlie = winnerId === charlieId ? 1 : 0;
-  const actualScoreRushil = winnerId === rushilId ? 1 : 0;
-
-  const newRatingCharlie = calculateNewRating(
-    charlieRating,
-    expectedScoreCharlie,
-    actualScoreCharlie
-  );
-  const newRatingRushil = calculateNewRating(
-    rushilRating,
-    expectedScoreRushil,
-    actualScoreRushil
-  );
-
-  return {
-    charlie: {
-      before: charlieRating,
-      after: newRatingCharlie,
-      change: newRatingCharlie - charlieRating,
-    },
-    rushil: {
-      before: rushilRating,
-      after: newRatingRushil,
-      change: newRatingRushil - rushilRating,
-    },
-  };
-}
-
-export function calculateNewRatingsForGame(
-  charlie: Player,
-  rushil: Player,
+// Returns how many points the {from} player should transfer to the {to} player
+// Given that {winner} won.
+// Note: might be negative if {from} is the winner or if drew against weaker player.
+export function pointsTransfer(
+  from: Player,
+  to: Player,
   winner: Player | null
-) {
-  if (winner === null) {
-    // Handle draws - each player gets 0.5 actual score
-    const expectedScoreCharlie = calculateExpectedScore(
-      charlie.rating,
-      rushil.rating
-    );
-    const expectedScoreRushil = calculateExpectedScore(
-      rushil.rating,
-      charlie.rating
-    );
+): number {
+  // Calculate expected score for 'to' player using standard ELO formula
+  const toExpected = 1 / (1 + Math.pow(10, (from.rating - to.rating) / 400));
 
-    const newRatingCharlie =
-      charlie.rating + K_FACTOR * (0.5 - expectedScoreCharlie);
-    const newRatingRushil =
-      rushil.rating + K_FACTOR * (0.5 - expectedScoreRushil);
+  // Determine actual score for 'to' player based on game outcome
+  let toActual = 0.5;
+  if (winner === to) toActual = 1;
+  else if (winner === from) toActual = 0;
 
-    return {
-      charlieNewRating: newRatingCharlie,
-      rushilNewRating: newRatingRushil,
-    };
-  } else {
-    // Handle wins/losses
-    const ratingChanges = calculateRatingChanges(
-      charlie.rating,
-      rushil.rating,
-      winner.id,
-      charlie.id,
-      rushil.id
-    );
-
-    return {
-      charlieNewRating: ratingChanges.charlie.after,
-      rushilNewRating: ratingChanges.rushil.after,
-    };
-  }
+  // Apply ELO formula: K × (Actual Score - Expected Score)
+  // This represents how many points 'to' should gain (positive) or lose (negative)
+  return K_FACTOR * (toActual - toExpected);
 }
 
 // In-place updates players with their ratings
@@ -121,40 +44,12 @@ export function calculatePlayerRatings(
 
   // Process each game to update ratings
   for (const game of sortedGames) {
-    const charlie = game.charlie;
-    const rushil = game.rushil;
-    const winner = game.winner;
+    const { charlie, winner, rushil } = game;
 
-    const charlieRating = charlie.rating;
-    const rushilRating = rushil.rating;
+    const charlieToRushil = pointsTransfer(charlie, rushil, winner);
 
-    // Handle draws (winner is null)
-    if (winner === null) {
-      // For draws, each player gets 0.5 actual score
-      const expectedScoreCharlie = calculateExpectedScore(
-        charlieRating,
-        rushilRating
-      );
-      const expectedScoreRushil = calculateExpectedScore(
-        rushilRating,
-        charlieRating
-      );
-
-      charlie.rating = charlieRating + K_FACTOR * (0.5 - expectedScoreCharlie);
-      rushil.rating = rushilRating + K_FACTOR * (0.5 - expectedScoreRushil);
-    } else {
-      // Normal win/loss case
-      const ratingChanges = calculateRatingChanges(
-        charlieRating,
-        rushilRating,
-        winner?.id ?? "",
-        charlie.id,
-        rushil.id
-      );
-
-      charlie.rating = ratingChanges.charlie.after;
-      rushil.rating = ratingChanges.rushil.after;
-    }
+    charlie.rating -= charlieToRushil;
+    rushil.rating += charlieToRushil;
   }
 
   // Round ratings to nearest integer

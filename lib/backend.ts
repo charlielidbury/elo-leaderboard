@@ -5,7 +5,7 @@ import {
   UnpopulatedGame,
   UncheckedPlayer,
 } from "@/lib/database";
-import { calculateNewRatingsForGame, calculatePlayerRatings } from "@/lib/elo";
+import { calculatePlayerRatings, pointsTransfer } from "@/lib/elo";
 
 async function getPlayersGames(): Promise<[Player[], Game[]]> {
   // Fetch all players
@@ -29,11 +29,9 @@ async function getPlayersGames(): Promise<[Player[], Game[]]> {
   );
   const populateGame = (game: UnpopulatedGame): Game => ({
     ...game,
-    winner: game.winner_id
-      ? (playersMap.get(game.winner_id) as Player)
-      : undefined, // type assertions are required because we havent checked the players yet
-    charlie: playersMap.get(game.c_id) as Player,
-    rushil: playersMap.get(game.r_id) as Player,
+    winner: game.winner_id ? (playersMap.get(game.winner_id)! as Player) : null,
+    charlie: playersMap.get(game.c_id)! as Player, // type assertions are required because we havent checked the players yet
+    rushil: playersMap.get(game.r_id)! as Player,
   });
   const games = unpopulatedGames.map(populateGame);
 
@@ -115,11 +113,7 @@ export const registerGameMutation = {
     winner: Player | null;
   }) => {
     // Calculate new ratings based on game outcome
-    const { charlieNewRating, rushilNewRating } = calculateNewRatingsForGame(
-      charlie,
-      rushil,
-      winner
-    );
+    const charlieToRushil = pointsTransfer(charlie, rushil, winner);
 
     const { data, error } = await supabase
       .from("games")
@@ -127,8 +121,8 @@ export const registerGameMutation = {
         c_id: charlie.id,
         r_id: rushil.id,
         winner_id: winner?.id,
-        c_rating_check: charlieNewRating,
-        r_rating_check: rushilNewRating,
+        c_rating_check: Math.round(charlie.rating - charlieToRushil),
+        r_rating_check: Math.round(rushil.rating + charlieToRushil),
       })
       .select();
 

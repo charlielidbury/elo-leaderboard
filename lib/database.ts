@@ -18,5 +18,5 @@ export type UnpopulatedGame = Database["public"]["Tables"]["games"]["Row"];
 export type Game = UnpopulatedGame & {
   charlie: Player;
   rushil: Player;
-  winner?: Player;
+  winner: Player | null;
 };
