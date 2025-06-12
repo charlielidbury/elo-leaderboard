@@ -81,7 +81,7 @@ function OpponentSelectStage({ currentUser }: { currentUser: Player }) {
                   value={player.id}
                   disabled={player.id === currentUser.id}
                 >
-                  {player.name} ({Math.round(player.rating)})
+                  {player.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -420,9 +420,12 @@ function SubmitStage({
           >
             {getButtonText()}
           </Button>
+          {winner === null && (
+            <p className="text-sm text-muted-foreground mt-2">Boring :/</p>
+          )}
           {winner === currentUser && (
             <p className="text-sm text-muted-foreground mt-2">
-              Congratulations
+              Don't forget to gloat!
             </p>
           )}
           {winner === opponent && (

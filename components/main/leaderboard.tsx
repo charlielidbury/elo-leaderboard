@@ -1,7 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { playersQuery } from "@/lib/backend";
+import { useState, useEffect } from "react";
 import { type Player } from "@/lib/database";
+
+// Animation constants
+const ANIMATION_DELAY_MS = 50;
+const ANIMATION_DURATION_MS = 200;
 
 interface PlayerDisplayProps {
   player: Player;
@@ -9,10 +14,23 @@ interface PlayerDisplayProps {
 }
 
 function PlayerDisplay({ player, index }: PlayerDisplayProps) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, index * ANIMATION_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [index]);
+
   return (
     <div
       key={player.id}
-      className="flex items-center justify-between p-4 rounded-lg border bg-muted"
+      className={`flex items-center justify-between p-4 rounded-lg border bg-muted transition-all ease-out ${
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+      }`}
+      style={{ transitionDuration: `${ANIMATION_DURATION_MS}ms` }}
     >
       <div className="flex items-center gap-4">
         <Badge variant={index === 0 ? "default" : "secondary"}>

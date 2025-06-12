@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,14 +16,29 @@ import { toast } from "@/hooks/use-toast";
 interface DisplayNameSetupProps {
   isOpen: boolean;
   onComplete: (displayName: string) => Promise<boolean>;
+  onOpenChange?: (open: boolean) => void;
+  initialValue?: string;
+  title?: string;
+  description?: string;
+  isEdit?: boolean;
 }
 
 export function DisplayNameSetup({
   isOpen,
   onComplete,
+  onOpenChange,
+  initialValue = "",
+  title = "Welcome to ELO Leaderboard!",
+  description = "Let's set up your profile. Choose a display name that other players will see.",
+  isEdit = false,
 }: DisplayNameSetupProps) {
-  const [displayName, setDisplayName] = useState("");
+  const [displayName, setDisplayName] = useState(initialValue);
   const [loading, setLoading] = useState(false);
+
+  // Update displayName when initialValue changes
+  useEffect(() => {
+    setDisplayName(initialValue);
+  }, [initialValue]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,37 +73,44 @@ export function DisplayNameSetup({
     setLoading(true);
     const success = await onComplete(displayName.trim());
 
-    if (success) {
-      toast({
-        title: "Welcome!",
-        description: "Your account has been set up successfully",
-      });
-      setDisplayName("");
-    } else {
-      toast({
-        title: "Error",
-        description: "Failed to create your profile. Please try again.",
-        variant: "destructive",
-      });
+    if (success && isEdit && onOpenChange) {
+      // For edit mode, close the dialog on success
+      onOpenChange(false);
+    } else if (!isEdit) {
+      // For new profile creation, show success toast and clear form
+      if (success) {
+        toast({
+          title: "Welcome!",
+          description: "Your account has been set up successfully",
+        });
+        setDisplayName("");
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to create your profile. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
 
     setLoading(false);
   };
 
   return (
-    <Dialog open={isOpen} modal>
+    <Dialog
+      open={isOpen}
+      modal
+      onOpenChange={isEdit && onOpenChange ? onOpenChange : undefined}
+    >
       <DialogContent
         className="sm:max-w-md"
-        // Prevent closing by clicking outside or pressing escape
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
+        // For edit mode, allow closing. For setup mode, prevent closing.
+        onPointerDownOutside={isEdit ? undefined : (e) => e.preventDefault()}
+        onEscapeKeyDown={isEdit ? undefined : (e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>Welcome to ELO Leaderboard!</DialogTitle>
-          <DialogDescription>
-            Let&apos;s set up your profile. Choose a display name that other
-            players will see.
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -114,7 +136,13 @@ export function DisplayNameSetup({
             disabled={loading || !displayName.trim()}
             className="w-full"
           >
-            {loading ? "Creating Profile..." : "Continue"}
+            {loading
+              ? isEdit
+                ? "Updating..."
+                : "Creating Profile..."
+              : isEdit
+              ? "Update Name"
+              : "Continue"}
           </Button>
         </form>
       </DialogContent>

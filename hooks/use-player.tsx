@@ -8,6 +8,7 @@ export function usePlayer(): {
   player: Player | null | undefined;
   loading: boolean;
   createPlayer: (displayName: string) => Promise<boolean>;
+  updatePlayer: (displayName: string) => Promise<boolean>;
   refetch: () => Promise<void>;
 } {
   const { user } = useAuth();
@@ -82,6 +83,37 @@ export function usePlayer(): {
     }
   };
 
+  const updatePlayer = async (displayName: string): Promise<boolean> => {
+    if (!user || !player) return false;
+
+    try {
+      const { data, error } = await supabase
+        .from("players")
+        .update({
+          name: displayName,
+        })
+        .eq("id", user.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error updating player:", error);
+        return false;
+      }
+
+      // Update local state with updated player
+      const playerWithRating: Player = {
+        ...data,
+        rating: data.rating_check,
+      };
+      setPlayer(playerWithRating);
+      return true;
+    } catch (error) {
+      console.error("Unexpected error updating player:", error);
+      return false;
+    }
+  };
+
   const refetch = async () => {
     await fetchPlayer();
   };
@@ -94,6 +126,7 @@ export function usePlayer(): {
     player,
     loading,
     createPlayer,
+    updatePlayer,
     refetch,
   };
 }

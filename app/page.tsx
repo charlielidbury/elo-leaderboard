@@ -21,7 +21,7 @@ export default function EloLeaderboard() {
           <div className="pt-6 px-6 max-w-[500px] mx-auto relative">
             {/* Header with Login Button */}
             <div className="text-center space-y-2">
-              <h1 className="text-4xl font-bold flex items-center justify-center gap-2">
+              <h1 className="text-3xl font-bold flex items-center justify-center gap-2">
                 Symbolica Chess
               </h1>
               <p className="text-muted-foreground">
@@ -40,7 +40,7 @@ export default function EloLeaderboard() {
           </div>
 
           {/* Navigation Buttons */}
-          <div className="flex items-center justify-center gap-4 max-w-[500px] mx-auto">
+          <div className="flex items-center justify-center gap-1.5 max-w-[500px] mx-auto">
             <Button
               variant={currentTab === "history" ? "default" : "outline"}
               size="sm"

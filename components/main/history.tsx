@@ -1,15 +1,31 @@
 import { useQuery } from "@tanstack/react-query";
 import { gamesQuery } from "@/lib/backend";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { type Game } from "@/lib/database";
 
-function GameDisplay({ game }: { game: Game }) {
+// Animation constants
+const ANIMATION_DELAY_MS = 35;
+const ANIMATION_DURATION_MS = 150;
+
+function GameDisplay({ game, index }: { game: Game; index: number }) {
   const [isClicked, setIsClicked] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, index * ANIMATION_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [index]);
 
   return (
     <div
       key={game.id}
-      className="rounded-lg border cursor-pointer bg-muted"
+      className={`rounded-lg border cursor-pointer bg-muted transition-all ease-out ${
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+      }`}
+      style={{ transitionDuration: `${ANIMATION_DURATION_MS}ms` }}
       onClick={() => setIsClicked(!isClicked)}
     >
       {/* Main row content */}
@@ -74,7 +90,9 @@ export default function Games() {
       ) : (
         games.data
           ?.slice(0, 10)
-          .map((game) => <GameDisplay key={game.id} game={game} />)
+          .map((game, index) => (
+            <GameDisplay key={game.id} game={game} index={index} />
+          ))
       )}
     </div>
   );

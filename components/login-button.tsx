@@ -66,7 +66,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
         <div className="flex-1 flex items-start justify-center pt-8 pb-16">
           <div className="w-full max-w-sm space-y-8">
             {/* Google Sign In */}
-            <div className="space-y-4">
+            {/* <div className="space-y-4">
               <Button
                 onClick={handleGoogleSignIn}
                 variant="outline"
@@ -104,7 +104,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                   Or continue with email
                 </span>
               </div>
-            </div>
+            </div> */}
 
             {/* Email/Password Tabs */}
             <Tabs defaultValue="signin" className="w-full">
@@ -255,14 +255,8 @@ export function LoginButton() {
 
   return (
     <>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setDialogOpen(true)}
-        className="gap-2"
-      >
-        <LogIn className="h-4 w-4" />
-        Login
+      <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
+        <LogIn className="h-4 w-4 -ml-1" />
       </Button>
       <AuthDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </>
