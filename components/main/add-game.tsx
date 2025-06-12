@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { usePlayer } from "@/hooks/use-player";
 import { useTab } from "@/hooks/use-tab";
 import { pointsTransfer } from "@/lib/elo";
+import { LoginButton } from "@/components/login-button";
 
 const STAGE_FADE_IN = "animate-in fade-in duration-300";
 
@@ -30,13 +31,14 @@ export default function RegisterGame() {
     return;
   }
 
-  // Show loading state while fetching current user
+  // Show login prompt when not authenticated
   if (player === null) {
     return (
-      <div className="flex items-center justify-center p-12 rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted">
-        <p className="text-muted-foreground text-lg">
-          Please sign in to register a game
+      <div className="flex flex-col items-center justify-center space-y-4">
+        <p className="text-muted-foreground text-lg text-center">
+          Must be logged in to add games
         </p>
+        <LoginButton full />
       </div>
     );
   }

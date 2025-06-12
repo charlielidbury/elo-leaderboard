@@ -237,7 +237,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
   );
 }
 
-export function LoginButton() {
+export function LoginButton({ full }: { full?: boolean }) {
   const { user, loading } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -257,6 +257,7 @@ export function LoginButton() {
     <>
       <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
         <LogIn className="h-4 w-4 -ml-1" />
+        {full && "Log In"}
       </Button>
       <AuthDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </>

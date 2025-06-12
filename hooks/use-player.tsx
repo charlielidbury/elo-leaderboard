@@ -18,6 +18,7 @@ export function usePlayer(): {
   const fetchPlayer = async () => {
     if (!user) {
       setLoading(false);
+      setPlayer(null);
       return;
     }
 
