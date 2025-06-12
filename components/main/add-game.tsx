@@ -222,6 +222,11 @@ function RatingDisplay({
   const newOpponentRating = Math.round(opponent.rating + pointsToOpponent);
 
   useEffect(() => {
+    setAnimatedCurrentRating(Math.round(currentUser.rating));
+    setAnimatedOpponentRating(Math.round(opponent.rating));
+    setAnimatedCurrentChange(0);
+    setAnimatedOpponentChange(0);
+
     // Calculate animation duration based on points transfer
     const pointsTransferred = Math.abs(pointsToOpponent);
     const calculatedDuration =
