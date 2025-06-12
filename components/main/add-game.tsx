@@ -16,6 +16,13 @@ import { usePlayer } from "@/hooks/use-player";
 import { useTab } from "@/hooks/use-tab";
 import { pointsTransfer } from "@/lib/elo";
 
+const STAGE_FADE_IN = "animate-in fade-in duration-300";
+
+// Rating animation constants
+const RATING_ANIMATION_DURATION_PER_10_POINTS = 1000; // 1 second per 10 points transferred
+const RATING_ANIMATION_STEPS = 60; // 60 steps for smooth animation
+const RATING_ANIMATION_DELAY = 500; // 500ms delay before animation starts
+
 export default function RegisterGame() {
   const { player } = usePlayer();
 
@@ -83,7 +90,9 @@ function OpponentSelectStage({ currentUser }: { currentUser: Player }) {
       </div>
 
       {opponent && (
-        <ResultStage currentUser={currentUser} opponent={opponent} />
+        <div className={STAGE_FADE_IN}>
+          <ResultStage currentUser={currentUser} opponent={opponent} />
+        </div>
       )}
     </div>
   );
@@ -134,11 +143,13 @@ function ResultStage({
         </div>
       </div>
 
-      <RatingStage
-        currentUser={currentUser}
-        opponent={opponent}
-        winner={winner}
-      />
+      <div className={STAGE_FADE_IN}>
+        <RatingStage
+          currentUser={currentUser}
+          opponent={opponent}
+          winner={winner}
+        />
+      </div>
     </div>
   );
 }
@@ -211,10 +222,15 @@ function RatingDisplay({
   const newOpponentRating = Math.round(opponent.rating + pointsToOpponent);
 
   useEffect(() => {
+    // Calculate animation duration based on points transfer
+    const pointsTransferred = Math.abs(pointsToOpponent);
+    const calculatedDuration =
+      (pointsTransferred / 10) * RATING_ANIMATION_DURATION_PER_10_POINTS;
+
     // Start animation after a short delay
     const timer = setTimeout(() => {
-      const duration = 2000; // 2 seconds
-      const steps = 60; // 60 steps for smooth animation
+      const duration = calculatedDuration;
+      const steps = RATING_ANIMATION_STEPS;
       const interval = duration / steps;
 
       let currentStep = 0;
@@ -253,7 +269,7 @@ function RatingDisplay({
       };
 
       animate();
-    }, 500);
+    }, RATING_ANIMATION_DELAY);
 
     return () => clearTimeout(timer);
   }, [
@@ -395,15 +411,24 @@ function SubmitStage({
 
   return (
     <div className="flex justify-center">
-      {winner !== undefined && (
-        <Button
-          onClick={handleSubmitGame}
-          disabled={registerGameMut.isPending}
-          variant={isAnimating ? "outline" : "default"}
-          className="h-16 text-2xl font-bold px-8"
-        >
-          {getButtonText()}
-        </Button>
+      {winner !== undefined && !isAnimating && (
+        <div className={`${STAGE_FADE_IN} text-center`}>
+          <Button
+            onClick={handleSubmitGame}
+            disabled={registerGameMut.isPending}
+            className="h-16 text-2xl font-bold px-8"
+          >
+            {getButtonText()}
+          </Button>
+          {winner === currentUser && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Congratulations
+            </p>
+          )}
+          {winner === opponent && (
+            <p className="text-sm text-muted-foreground mt-2">Loser!</p>
+          )}
+        </div>
       )}
     </div>
   );

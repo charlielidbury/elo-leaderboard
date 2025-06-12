@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LoginButton } from "@/components/login-button";
 import RegisterGame from "@/components/main/add-game";
 import { useTab } from "@/hooks/use-tab";
+import Link from "next/link";
 
 export default function EloLeaderboard() {
   const { currentTab, setTab } = useTab();
@@ -25,12 +26,12 @@ export default function EloLeaderboard() {
               </h1>
               <p className="text-muted-foreground">
                 Track rankings with the{" "}
-                <a
-                  href="https://en.wikipedia.org/wiki/Elo_rating_system"
-                  className="underline"
+                <Link
+                  href="/explanation"
+                  className="underline hover:text-foreground transition-colors"
                 >
                   ELO rating system
-                </a>
+                </Link>
               </p>
             </div>
             <div className="absolute top-6 right-6">
