@@ -9,8 +9,9 @@ import { LoginButton } from "@/components/login-button";
 import RegisterGame from "@/components/main/add-game";
 import { useTab } from "@/hooks/use-tab";
 import Link from "next/link";
+import { Suspense } from "react";
 
-export default function EloLeaderboard() {
+function EloLeaderboardContent() {
   const { currentTab, setTab } = useTab();
 
   return (
@@ -84,5 +85,19 @@ export default function EloLeaderboard() {
       {/* Floating Theme Toggle */}
       <ThemeToggle />
     </div>
+  );
+}
+
+export default function EloLeaderboard() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          Loading...
+        </div>
+      }
+    >
+      <EloLeaderboardContent />
+    </Suspense>
   );
 }
