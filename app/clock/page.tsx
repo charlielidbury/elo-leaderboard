@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Play, Pause, Settings } from "lucide-react";
+import { Settings, Pause, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -24,11 +24,11 @@ function formatTime(ms: number): string {
 }
 
 export default function ChessClockPage() {
-  const [timePerPerson, setTimePerPerson] = useState(5); // minutes
-  const [increment, setIncrement] = useState(3); // seconds
+  const [timePerPerson, setTimePerPerson] = useState(10); // minutes
+  const [increment, setIncrement] = useState(0); // seconds
 
-  const [player1Time, setPlayer1Time] = useState(5 * 60 * 1000);
-  const [player2Time, setPlayer2Time] = useState(5 * 60 * 1000);
+  const [player1Time, setPlayer1Time] = useState(10 * 60 * 1000);
+  const [player2Time, setPlayer2Time] = useState(10 * 60 * 1000);
   const [activePlayer, setActivePlayer] = useState<ActivePlayer>(1);
   const [isRunning, setIsRunning] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
@@ -36,8 +36,8 @@ export default function ChessClockPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Temp values for the settings dialog so we only apply on close
-  const [tempTime, setTempTime] = useState(5);
-  const [tempIncrement, setTempIncrement] = useState(3);
+  const [tempTime, setTempTime] = useState(10);
+  const [tempIncrement, setTempIncrement] = useState(0);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastTickRef = useRef<number>(0);
@@ -89,19 +89,15 @@ export default function ChessClockPage() {
     return stopInterval;
   }, [isRunning, tick, stopInterval]);
 
-  const handlePausePlay = () => {
-    if (isFinished) return;
-    setIsRunning((prev) => !prev);
-    if (!hasStarted) setHasStarted(true);
-  };
-
   const handlePlayerTap = (player: ActivePlayer) => {
     if (isFinished) return;
 
-    // If clock hasn't started yet, tapping a side starts the clock
-    // with that player as the active (ticking) player
+    // If clock hasn't started yet, tapping a side starts the
+    // OTHER player's clock (chess convention: you hit your clock
+    // after making your move, starting opponent's time)
     if (!hasStarted) {
-      setActivePlayer(player);
+      const opponent: ActivePlayer = player === 1 ? 2 : 1;
+      setActivePlayer(opponent);
       setHasStarted(true);
       setIsRunning(true);
       return;
@@ -120,6 +116,23 @@ export default function ChessClockPage() {
 
     // Switch active player
     setActivePlayer(player === 1 ? 2 : 1);
+  };
+
+  const handlePauseOrReset = () => {
+    if (isRunning) {
+      // Pause
+      setIsRunning(false);
+    } else if (hasStarted) {
+      // Reset timers to current settings
+      stopInterval();
+      const timeMs = timePerPerson * 60 * 1000;
+      setPlayer1Time(timeMs);
+      setPlayer2Time(timeMs);
+      setActivePlayer(1);
+      setIsRunning(false);
+      setIsFinished(false);
+      setHasStarted(false);
+    }
   };
 
   const openSettings = () => {
@@ -148,6 +161,8 @@ export default function ChessClockPage() {
     setSettingsOpen(open);
   };
 
+  const timeControlLabel = `${timePerPerson}+${increment}`;
+
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* Player 2 (top, displayed upside down for face-to-face play) */}
@@ -175,34 +190,34 @@ export default function ChessClockPage() {
 
       {/* Middle control bar */}
       <div className="flex items-center justify-between px-6 py-3 border-y bg-background">
-        <Button
-          onClick={handlePausePlay}
-          variant="ghost"
-          size="icon"
-          className="h-10 w-10"
-          aria-label={isRunning ? "Pause" : "Play"}
-          disabled={isFinished}
-        >
-          {isRunning ? (
-            <Pause className="h-5 w-5" />
-          ) : (
-            <Play className="h-5 w-5" />
-          )}
-        </Button>
-
         <Link href="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-          Chess Clock
+          Back
         </Link>
 
-        <Button
+        {hasStarted && (
+          <Button
+            onClick={handlePauseOrReset}
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10"
+            aria-label={isRunning ? "Pause" : "Reset"}
+          >
+            {isRunning ? (
+              <Pause className="h-5 w-5" />
+            ) : (
+              <RotateCcw className="h-5 w-5" />
+            )}
+          </Button>
+        )}
+
+        <button
           onClick={openSettings}
-          variant="ghost"
-          size="icon"
-          className="h-10 w-10"
-          aria-label="Settings"
+          className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Edit time control"
         >
-          <Settings className="h-5 w-5" />
-        </Button>
+          <span className="font-mono">{timeControlLabel}</span>
+          <Settings className="h-4 w-4" />
+        </button>
       </div>
 
       {/* Player 1 (bottom) */}
