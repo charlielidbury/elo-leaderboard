@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Trophy, History, Plus } from "lucide-react";
+import { Trophy, History, Plus, Clock } from "lucide-react";
 import Players from "@/components/main/leaderboard";
 import Games from "@/components/main/history";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -102,6 +102,20 @@ function EloLeaderboardContent() {
           .
         </p>
       </footer>
+
+      {/* Floating Clock Button */}
+      <div className="fixed bottom-20 right-6 z-50">
+        <Link href="/clock">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-12 w-12 rounded-full bg-background/80 backdrop-blur-sm border-2 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110"
+            aria-label="Chess Clock"
+          >
+            <Clock className="h-5 w-5" />
+          </Button>
+        </Link>
+      </div>
 
       {/* Floating Theme Toggle */}
       <ThemeToggle />
