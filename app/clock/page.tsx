@@ -6,7 +6,9 @@ import { Settings, Pause, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogDescription,
@@ -282,6 +284,11 @@ export default function ChessClockPage() {
               />
             </div>
           </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button className="w-full">Confirm</Button>
+            </DialogClose>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
