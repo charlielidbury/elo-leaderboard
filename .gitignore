@@ -18,6 +18,10 @@ yarn-error.log*
 
 # env files
 .env*
+!.envrc
+
+# direnv
+.direnv/
 
 # vercel
 .vercel
