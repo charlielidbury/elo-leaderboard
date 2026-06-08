@@ -6,7 +6,9 @@ import { Settings, Pause, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogDescription,
@@ -41,6 +43,24 @@ export default function ChessClockPage() {
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastTickRef = useRef<number>(0);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  const acquireWakeLock = useCallback(async () => {
+    try {
+      if ("wakeLock" in navigator) {
+        wakeLockRef.current = await navigator.wakeLock.request("screen");
+      }
+    } catch {
+      // Wake Lock API not supported or request failed (e.g. low battery)
+    }
+  }, []);
+
+  const releaseWakeLock = useCallback(() => {
+    if (wakeLockRef.current) {
+      wakeLockRef.current.release();
+      wakeLockRef.current = null;
+    }
+  }, []);
 
   const stopInterval = useCallback(() => {
     if (intervalRef.current) {
@@ -88,6 +108,29 @@ export default function ChessClockPage() {
     }
     return stopInterval;
   }, [isRunning, tick, stopInterval]);
+
+  // Acquire/release wake lock when running state changes
+  useEffect(() => {
+    if (isRunning) {
+      acquireWakeLock();
+    } else {
+      releaseWakeLock();
+    }
+    return releaseWakeLock;
+  }, [isRunning, acquireWakeLock, releaseWakeLock]);
+
+  // Re-acquire wake lock when tab becomes visible again (browser releases it on hide)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && isRunning) {
+        acquireWakeLock();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isRunning, acquireWakeLock]);
 
   const handlePlayerTap = (player: ActivePlayer) => {
     if (isFinished) return;
@@ -282,6 +325,11 @@ export default function ChessClockPage() {
               />
             </div>
           </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button className="w-full">Confirm</Button>
+            </DialogClose>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
