@@ -59,12 +59,12 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-none w-screen h-screen m-0 rounded-none flex flex-col bg-gradient-to-br from-background to-muted/20">
-        <DialogHeader className="text-center pt-12 pb-8">
+        <DialogHeader className="text-center pt-4 pb-2">
           <DialogTitle className="text-4xl font-bold mb-2"></DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 flex items-start justify-center pt-8 pb-16">
-          <div className="w-full max-w-sm space-y-8">
+        <div className="flex-1 flex items-start justify-center pt-2 pb-16">
+          <div className="w-full max-w-sm space-y-6">
             {/* Google Sign In */}
             <div className="space-y-4">
               <Button
@@ -95,7 +95,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
               </Button>
             </div>
 
-            <div className="relative my-8">
+            <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-muted-foreground/20" />
               </div>
