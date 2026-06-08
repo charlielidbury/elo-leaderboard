@@ -3,10 +3,16 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Play, Pause, RotateCcw } from "lucide-react";
+import { Play, Pause, Settings } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import Link from "next/link";
 
-type ClockState = "idle" | "running" | "paused" | "finished";
 type ActivePlayer = 1 | 2;
 
 function formatTime(ms: number): string {
@@ -24,7 +30,14 @@ export default function ChessClockPage() {
   const [player1Time, setPlayer1Time] = useState(5 * 60 * 1000);
   const [player2Time, setPlayer2Time] = useState(5 * 60 * 1000);
   const [activePlayer, setActivePlayer] = useState<ActivePlayer>(1);
-  const [clockState, setClockState] = useState<ClockState>("idle");
+  const [isRunning, setIsRunning] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Temp values for the settings dialog so we only apply on close
+  const [tempTime, setTempTime] = useState(5);
+  const [tempIncrement, setTempIncrement] = useState(3);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastTickRef = useRef<number>(0);
@@ -46,7 +59,8 @@ export default function ChessClockPage() {
         const next = prev - elapsed;
         if (next <= 0) {
           stopInterval();
-          setClockState("finished");
+          setIsRunning(false);
+          setIsFinished(true);
           return 0;
         }
         return next;
@@ -56,7 +70,8 @@ export default function ChessClockPage() {
         const next = prev - elapsed;
         if (next <= 0) {
           stopInterval();
-          setClockState("finished");
+          setIsRunning(false);
+          setIsFinished(true);
           return 0;
         }
         return next;
@@ -65,44 +80,34 @@ export default function ChessClockPage() {
   }, [activePlayer, stopInterval]);
 
   useEffect(() => {
-    if (clockState === "running") {
+    if (isRunning) {
       lastTickRef.current = Date.now();
       intervalRef.current = setInterval(tick, 50);
     } else {
       stopInterval();
     }
     return stopInterval;
-  }, [clockState, tick, stopInterval]);
+  }, [isRunning, tick, stopInterval]);
 
-  const handleStart = () => {
-    if (clockState === "idle") {
-      const timeMs = timePerPerson * 60 * 1000;
-      setPlayer1Time(timeMs);
-      setPlayer2Time(timeMs);
-      setActivePlayer(1);
-      setClockState("running");
-    } else if (clockState === "paused") {
-      setClockState("running");
-    }
-  };
-
-  const handlePause = () => {
-    if (clockState === "running") {
-      setClockState("paused");
-    }
-  };
-
-  const handleReset = () => {
-    stopInterval();
-    const timeMs = timePerPerson * 60 * 1000;
-    setPlayer1Time(timeMs);
-    setPlayer2Time(timeMs);
-    setActivePlayer(1);
-    setClockState("idle");
+  const handlePausePlay = () => {
+    if (isFinished) return;
+    setIsRunning((prev) => !prev);
+    if (!hasStarted) setHasStarted(true);
   };
 
   const handlePlayerTap = (player: ActivePlayer) => {
-    if (clockState !== "running") return;
+    if (isFinished) return;
+
+    // If clock hasn't started yet, tapping a side starts the clock
+    // with that player as the active (ticking) player
+    if (!hasStarted) {
+      setActivePlayer(player);
+      setHasStarted(true);
+      setIsRunning(true);
+      return;
+    }
+
+    if (!isRunning) return;
     if (activePlayer !== player) return;
 
     // Add increment to the player who just moved
@@ -117,129 +122,153 @@ export default function ChessClockPage() {
     setActivePlayer(player === 1 ? 2 : 1);
   };
 
-  const isIdle = clockState === "idle";
-  const isRunning = clockState === "running";
-  const isFinished = clockState === "finished";
+  const openSettings = () => {
+    // Pause clock when opening settings
+    setIsRunning(false);
+    setTempTime(timePerPerson);
+    setTempIncrement(increment);
+    setSettingsOpen(true);
+  };
+
+  const handleSettingsClose = (open: boolean) => {
+    if (!open) {
+      // Apply settings and reset timers
+      const newTime = Math.max(1, tempTime);
+      const newIncrement = Math.max(0, tempIncrement);
+      setTimePerPerson(newTime);
+      setIncrement(newIncrement);
+      const timeMs = newTime * 60 * 1000;
+      setPlayer1Time(timeMs);
+      setPlayer2Time(timeMs);
+      setActivePlayer(1);
+      setIsRunning(false);
+      setIsFinished(false);
+      setHasStarted(false);
+    }
+    setSettingsOpen(open);
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b">
-        <Link href="/">
-          <Button variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
+      {/* Player 2 (top, displayed upside down for face-to-face play) */}
+      <button
+        onClick={() => handlePlayerTap(2)}
+        className={`flex-1 flex items-center justify-center transition-colors select-none ${
+          isFinished && player2Time <= 0
+            ? "bg-destructive/20 text-destructive"
+            : activePlayer === 2 && hasStarted
+            ? "bg-primary text-primary-foreground"
+            : "bg-muted text-muted-foreground"
+        } ${!isFinished ? "cursor-pointer active:opacity-80" : ""}`}
+      >
+        <div className="rotate-180">
+          <div className="text-7xl font-mono font-bold tabular-nums">
+            {formatTime(player2Time)}
+          </div>
+          {isFinished && player2Time <= 0 && (
+            <div className="text-center text-sm mt-2 font-medium">
+              Time&apos;s up!
+            </div>
+          )}
+        </div>
+      </button>
+
+      {/* Middle control bar */}
+      <div className="flex items-center justify-between px-6 py-3 border-y bg-background">
+        <Button
+          onClick={handlePausePlay}
+          variant="ghost"
+          size="icon"
+          className="h-10 w-10"
+          aria-label={isRunning ? "Pause" : "Play"}
+          disabled={isFinished}
+        >
+          {isRunning ? (
+            <Pause className="h-5 w-5" />
+          ) : (
+            <Play className="h-5 w-5" />
+          )}
+        </Button>
+
+        <Link href="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          Chess Clock
         </Link>
-        <h1 className="text-lg font-bold">Chess Clock</h1>
-        <div className="w-20" />
+
+        <Button
+          onClick={openSettings}
+          variant="ghost"
+          size="icon"
+          className="h-10 w-10"
+          aria-label="Settings"
+        >
+          <Settings className="h-5 w-5" />
+        </Button>
       </div>
 
-      {/* Settings (only when idle) */}
-      {isIdle && (
-        <div className="p-4 space-y-4 max-w-sm mx-auto w-full">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              Time per person (minutes)
-            </label>
-            <Input
-              type="number"
-              min={1}
-              max={180}
-              value={timePerPerson}
-              onChange={(e) => setTimePerPerson(Math.max(1, parseInt(e.target.value) || 1))}
-            />
+      {/* Player 1 (bottom) */}
+      <button
+        onClick={() => handlePlayerTap(1)}
+        className={`flex-1 flex items-center justify-center transition-colors select-none ${
+          isFinished && player1Time <= 0
+            ? "bg-destructive/20 text-destructive"
+            : activePlayer === 1 && hasStarted
+            ? "bg-primary text-primary-foreground"
+            : "bg-muted text-muted-foreground"
+        } ${!isFinished ? "cursor-pointer active:opacity-80" : ""}`}
+      >
+        <div>
+          <div className="text-7xl font-mono font-bold tabular-nums">
+            {formatTime(player1Time)}
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              Increment (seconds)
-            </label>
-            <Input
-              type="number"
-              min={0}
-              max={60}
-              value={increment}
-              onChange={(e) => setIncrement(Math.max(0, parseInt(e.target.value) || 0))}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Timer displays */}
-      <div className="flex-1 flex flex-col gap-2 p-4">
-        {/* Player 2 (top, displayed upside down for face-to-face play) */}
-        <button
-          onClick={() => handlePlayerTap(2)}
-          disabled={!isRunning || activePlayer !== 2}
-          className={`flex-1 rounded-2xl flex items-center justify-center transition-colors select-none ${
-            isFinished && player2Time <= 0
-              ? "bg-destructive/20 text-destructive"
-              : activePlayer === 2 && !isIdle
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground"
-          } ${isRunning && activePlayer === 2 ? "cursor-pointer active:opacity-80" : ""}`}
-          style={{ minHeight: "30vh" }}
-        >
-          <div className="rotate-180">
-            <div className="text-6xl font-mono font-bold tabular-nums">
-              {formatTime(player2Time)}
+          {isFinished && player1Time <= 0 && (
+            <div className="text-center text-sm mt-2 font-medium">
+              Time&apos;s up!
             </div>
-            <div className="text-center text-sm mt-2 opacity-70">
-              Player 2 {activePlayer === 2 && isRunning && "(tap)"}
-            </div>
-          </div>
-        </button>
-
-        {/* Controls */}
-        <div className="flex items-center justify-center gap-3 py-2">
-          {(isIdle || clockState === "paused") && (
-            <Button onClick={handleStart} size="lg" className="gap-2">
-              <Play className="h-5 w-5" />
-              {isIdle ? "Start" : "Resume"}
-            </Button>
-          )}
-          {isRunning && (
-            <Button onClick={handlePause} variant="secondary" size="lg" className="gap-2">
-              <Pause className="h-5 w-5" />
-              Pause
-            </Button>
-          )}
-          {!isIdle && (
-            <Button onClick={handleReset} variant="outline" size="lg" className="gap-2">
-              <RotateCcw className="h-5 w-5" />
-              Reset
-            </Button>
-          )}
-          {isFinished && (
-            <span className="text-sm font-medium text-destructive ml-2">
-              {player1Time <= 0 ? "Player 1" : "Player 2"} ran out of time!
-            </span>
           )}
         </div>
+      </button>
 
-        {/* Player 1 (bottom) */}
-        <button
-          onClick={() => handlePlayerTap(1)}
-          disabled={!isRunning || activePlayer !== 1}
-          className={`flex-1 rounded-2xl flex items-center justify-center transition-colors select-none ${
-            isFinished && player1Time <= 0
-              ? "bg-destructive/20 text-destructive"
-              : activePlayer === 1 && !isIdle
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground"
-          } ${isRunning && activePlayer === 1 ? "cursor-pointer active:opacity-80" : ""}`}
-          style={{ minHeight: "30vh" }}
-        >
-          <div>
-            <div className="text-6xl font-mono font-bold tabular-nums">
-              {formatTime(player1Time)}
+      {/* Settings Dialog */}
+      <Dialog open={settingsOpen} onOpenChange={handleSettingsClose}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Clock Settings</DialogTitle>
+            <DialogDescription>
+              Changing settings will reset the timers.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Time per person (minutes)
+              </label>
+              <Input
+                type="number"
+                min={1}
+                max={180}
+                value={tempTime}
+                onChange={(e) =>
+                  setTempTime(Math.max(1, parseInt(e.target.value) || 1))
+                }
+              />
             </div>
-            <div className="text-center text-sm mt-2 opacity-70">
-              Player 1 {activePlayer === 1 && isRunning && "(tap)"}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Increment (seconds)
+              </label>
+              <Input
+                type="number"
+                min={0}
+                max={60}
+                value={tempIncrement}
+                onChange={(e) =>
+                  setTempIncrement(Math.max(0, parseInt(e.target.value) || 0))
+                }
+              />
             </div>
           </div>
-        </button>
-      </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
