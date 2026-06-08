@@ -95,7 +95,7 @@ export default function LeaderboardsPage() {
       {/* Fixed Footer */}
       <footer className="fixed bottom-1 left-0 right-0 py-2 text-center bg-background/80 backdrop-blur-sm z-40">
         <p className="text-sm text-muted-foreground">
-          Made, with love, by{" "}
+          Made with love by{" "}
           <a
             href="https://charlielidbury.com"
             className="underline hover:text-primary"
@@ -109,7 +109,6 @@ export default function LeaderboardsPage() {
           >
             Claude
           </a>
-          .
         </p>
       </footer>
 

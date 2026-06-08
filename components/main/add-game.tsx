@@ -183,11 +183,6 @@ function RatingStage({
   opponent: Player;
   winner: Player | null | undefined;
 }) {
-  const [isAnimating, setIsAnimating] = useState(true);
-  useEffect(() => {
-    setIsAnimating(true);
-  }, [winner]);
-
   if (winner === undefined) {
     return null;
   }
@@ -198,13 +193,11 @@ function RatingStage({
         currentUser={currentUser}
         opponent={opponent}
         winner={winner}
-        setAnimating={setIsAnimating}
       />
       <SubmitStage
         currentUser={currentUser}
         opponent={opponent}
         winner={winner}
-        isAnimating={isAnimating}
       />
     </div>
   );
@@ -214,12 +207,10 @@ function RatingDisplay({
   currentUser,
   opponent,
   winner,
-  setAnimating,
 }: {
   currentUser: Player;
   opponent: Player;
   winner: Player | null | undefined;
-  setAnimating: (isAnimating: boolean) => void;
 }) {
   const [animatedCurrentRating, setAnimatedCurrentRating] = useState(
     Math.round(currentUser.rating)
@@ -289,7 +280,7 @@ function RatingDisplay({
         if (currentStep < steps) {
           setTimeout(animate, interval);
         } else {
-          setAnimating(false); // Animation ends
+          // Animation complete
         }
       };
 
@@ -304,7 +295,6 @@ function RatingDisplay({
     newOpponentRating,
     pointsToCurrentUser,
     pointsToOpponent,
-    setAnimating,
   ]);
 
   const formatChange = (change: number) => {
@@ -365,7 +355,6 @@ function SubmitStage({
   currentUser: Player;
   opponent: Player;
   winner: Player | null | undefined;
-  isAnimating: boolean;
 }) {
   const { leaderboardId } = useLeaderboard();
   const queryClient = useQueryClient();
@@ -429,7 +418,7 @@ function SubmitStage({
 
   return (
     <div className="flex justify-center">
-      {winner !== undefined && !isAnimating && (
+      {winner !== undefined && (
         <div className={`${STAGE_FADE_IN} text-center`}>
           <Button
             onClick={handleSubmitGame}
