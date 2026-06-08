@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { leaderboardBySlugQuery } from "@/lib/backend";
 import { LeaderboardContext } from "@/hooks/use-leaderboard";
 import { Button } from "@/components/ui/button";
-import { Trophy, History, Plus, Clock } from "lucide-react";
+import { Trophy, History, Plus, Clock, ArrowLeft } from "lucide-react";
 import Players from "@/components/main/leaderboard";
 import Games from "@/components/main/history";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -56,14 +56,16 @@ function LeaderboardPageContent() {
         <div className="bg-muted pb-8">
           <div className="space-y-8">
             <div className="pt-6 px-6 max-w-[500px] mx-auto relative">
-              {/* Header with Login Button */}
-              <div className="text-center space-y-2">
-                <Link
-                  href="/leaderboards"
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors underline"
-                >
-                  All Leaderboards
+              {/* Back arrow - mirrors login button position */}
+              <div className="absolute top-6 left-6">
+                <Link href="/leaderboards">
+                  <Button variant="ghost" size="sm">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
                 </Link>
+              </div>
+              {/* Header */}
+              <div className="text-center space-y-2">
                 <h1 className="text-3xl font-bold flex items-center justify-center gap-2">
                   {leaderboard.name}
                 </h1>
@@ -77,6 +79,7 @@ function LeaderboardPageContent() {
                   </Link>
                 </p>
               </div>
+              {/* Login button */}
               <div className="absolute top-6 right-6">
                 <LoginButton />
               </div>
