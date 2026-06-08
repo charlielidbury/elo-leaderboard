@@ -23,6 +23,9 @@ yarn-error.log*
 # direnv
 .direnv/
 
+# playwright mcp
+.playwright-mcp/
+
 # vercel
 .vercel
 

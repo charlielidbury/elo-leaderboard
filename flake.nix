@@ -13,11 +13,14 @@
         vercel = pkgs.writeShellScriptBin "vercel" ''
           exec ${pkgs.pnpm_9}/bin/pnpx vercel "$@"
         '';
+        supabase = pkgs.writeShellScriptBin "supabase" ''
+          exec ${pkgs.pnpm_9}/bin/pnpx supabase "$@"
+        '';
         toolchain = [
           pkgs.nodejs_22
           pkgs.pnpm_9
-          pkgs.supabase-cli
           vercel
+          supabase
         ];
       in
       {
