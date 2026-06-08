@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { playersQuery } from "@/lib/backend";
 import { useState, useEffect } from "react";
 import { type Player } from "@/lib/database";
+import { useLeaderboard } from "@/hooks/use-leaderboard";
 
 // Animation constants
 const ANIMATION_DELAY_MS = 50;
@@ -48,7 +49,8 @@ function PlayerDisplay({ player, index }: PlayerDisplayProps) {
 }
 
 export default function Players() {
-  const players = useQuery(playersQuery);
+  const { leaderboardId } = useLeaderboard();
+  const players = useQuery(playersQuery(leaderboardId));
 
   if (players.isLoading) {
     return (

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { playersQuery, registerGameMutation } from "@/lib/backend";
+import { playersQuery, allPlayersQuery, registerGameMutation } from "@/lib/backend";
 import { toast } from "@/hooks/use-toast";
-import { type Player } from "@/lib/database";
+import { type Player, type UncheckedPlayer } from "@/lib/database";
 import { useAuth } from "@/hooks/use-auth";
 import {
   Select,
@@ -16,6 +16,7 @@ import { usePlayer } from "@/hooks/use-player";
 import { useTab } from "@/hooks/use-tab";
 import { pointsTransfer } from "@/lib/elo";
 import { LoginButton } from "@/components/login-button";
+import { useLeaderboard } from "@/hooks/use-leaderboard";
 
 const STAGE_FADE_IN = "animate-in fade-in duration-300";
 
@@ -51,8 +52,25 @@ export default function RegisterGame() {
 }
 
 function OpponentSelectStage({ currentUser }: { currentUser: Player }) {
-  const players = useQuery(playersQuery);
+  const { leaderboardId } = useLeaderboard();
+  const players = useQuery(playersQuery(leaderboardId));
+  const allPlayers = useQuery(allPlayersQuery);
   const [opponent, setOpponent] = useState<Player | null>(null);
+
+  // Combine: show all global players, using leaderboard-scoped ratings where available
+  const playerList = (() => {
+    if (!allPlayers.data) return players.data || [];
+    const ratedMap = new Map<string, Player>();
+    if (players.data) {
+      for (const p of players.data) {
+        ratedMap.set(p.id, p);
+      }
+    }
+    // Return all players, using rated version if available, else adding default rating
+    return allPlayers.data.map(
+      (p) => ratedMap.get(p.id) || { ...p, rating: 1000 }
+    );
+  })();
 
   return (
     <div className="space-y-12">
@@ -61,7 +79,7 @@ function OpponentSelectStage({ currentUser }: { currentUser: Player }) {
           <Select
             value={opponent?.id || ""}
             onValueChange={(playerId) => {
-              const selectedPlayer = players.data?.find(
+              const selectedPlayer = playerList.find(
                 (p) => p.id === playerId
               );
               setOpponent(selectedPlayer || null);
@@ -77,7 +95,7 @@ function OpponentSelectStage({ currentUser }: { currentUser: Player }) {
               <SelectValue placeholder="Opponent" />
             </SelectTrigger>
             <SelectContent>
-              {players.data?.map((player) => (
+              {playerList.map((player) => (
                 <SelectItem
                   key={player.id}
                   value={player.id}
@@ -349,15 +367,15 @@ function SubmitStage({
   winner: Player | null | undefined;
   isAnimating: boolean;
 }) {
-  const players = useQuery(playersQuery);
+  const { leaderboardId } = useLeaderboard();
   const queryClient = useQueryClient();
   const { setTab } = useTab();
 
   const registerGameMut = useMutation({
     ...registerGameMutation,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["games"] });
-      queryClient.invalidateQueries({ queryKey: ["players"] });
+      queryClient.invalidateQueries({ queryKey: ["games", leaderboardId] });
+      queryClient.invalidateQueries({ queryKey: ["players", leaderboardId] });
       toast({
         title: "Game added successfully!",
         description: "The game has been recorded and ratings updated.",
@@ -391,18 +409,11 @@ function SubmitStage({
       return;
     }
 
-    if (!players.data) {
-      toast({
-        title: "Players data not loaded",
-        variant: "destructive",
-      });
-      return;
-    }
-
     registerGameMut.mutate({
-      charlie: currentUser,
-      rushil: opponent,
-      winner,
+      c_id: currentUser.id,
+      r_id: opponent.id,
+      winner_id: winner?.id ?? null,
+      leaderboard_id: leaderboardId,
     });
   };
 

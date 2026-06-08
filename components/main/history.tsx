@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { gamesQuery } from "@/lib/backend";
 import { useState, useEffect } from "react";
 import { type Game } from "@/lib/database";
+import { useLeaderboard } from "@/hooks/use-leaderboard";
 
 // Animation constants
 const ANIMATION_DELAY_MS = 35;
@@ -65,7 +66,8 @@ function GameDisplay({ game, index }: { game: Game; index: number }) {
 }
 
 export default function Games() {
-  const games = useQuery(gamesQuery);
+  const { leaderboardId } = useLeaderboard();
+  const games = useQuery(gamesQuery(leaderboardId));
 
   if (games.isLoading) {
     return (

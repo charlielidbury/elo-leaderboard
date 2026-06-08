@@ -20,3 +20,5 @@ export type Game = UnpopulatedGame & {
   rushil: Player;
   winner: Player | null;
 };
+
+export type Leaderboard = Database["public"]["Tables"]["leaderboards"]["Row"];
