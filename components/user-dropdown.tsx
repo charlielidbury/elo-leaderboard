@@ -75,11 +75,11 @@ export function UserDropdown() {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setEditNameOpen(true)}>
+          <DropdownMenuItem onSelect={() => setEditNameOpen(true)}>
             <Edit className="mr-2 h-4 w-4" />
             <span>Edit Name</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={signOut}>
+          <DropdownMenuItem onSelect={signOut}>
             <LogOut className="mr-2 h-4 w-4" />
             <span>Log out</span>
           </DropdownMenuItem>
