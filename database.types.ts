@@ -18,31 +18,40 @@ export type Database = {
         Row: {
           c_id: string
           c_rating_check: number
+          confirmed_at: string | null
           created_at: string
           id: string
           leaderboard_id: string
           r_id: string
           r_rating_check: number
+          status: string
+          submitted_by: string
           winner_id: string | null
         }
         Insert: {
           c_id: string
           c_rating_check?: number
+          confirmed_at?: string | null
           created_at?: string
           id?: string
           leaderboard_id: string
           r_id: string
           r_rating_check?: number
+          status?: string
+          submitted_by: string
           winner_id?: string | null
         }
         Update: {
           c_id?: string
           c_rating_check?: number
+          confirmed_at?: string | null
           created_at?: string
           id?: string
           leaderboard_id?: string
           r_id?: string
           r_rating_check?: number
+          status?: string
+          submitted_by?: string
           winner_id?: string | null
         }
         Relationships: [
