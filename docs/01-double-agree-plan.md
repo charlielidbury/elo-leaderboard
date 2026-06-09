@@ -30,24 +30,22 @@ The app is a Next.js 15 + Supabase leaderboard application where:
 
 ```sql
 ALTER TABLE public.games
-  ADD COLUMN status text NOT NULL DEFAULT 'confirmed';
+  ADD COLUMN status text NOT NULL DEFAULT 'confirmed',
+  ADD COLUMN submitted_by uuid REFERENCES auth.users(id),
+  ADD COLUMN finalised_at timestamptz;
 
 ALTER TABLE public.games
-  ADD COLUMN submitted_by uuid REFERENCES auth.users(id);
-
-ALTER TABLE public.games
-  ADD COLUMN confirmed_at timestamptz;
-
-ALTER TABLE public.games
-  ADD CONSTRAINT games_status_check CHECK (status IN ('pending', 'confirmed'));
+  ADD CONSTRAINT games_status_check CHECK (status IN ('pending', 'confirmed', 'rejected'));
 ```
 
-**Why `status` text and not boolean?** Extensible -- if we later add "rejected" or "expired" statuses, we just update the CHECK constraint.
+- `status`: `'pending'` | `'confirmed'` | `'rejected'`
+- `submitted_by`: who submitted the game
+- `finalised_at`: when it was confirmed or rejected (null while pending)
 
 **B. Backfill existing games:**
 
 ```sql
-UPDATE public.games SET status = 'confirmed', submitted_by = c_id WHERE submitted_by IS NULL;
+UPDATE public.games SET status = 'confirmed', submitted_by = c_id, finalised_at = created_at WHERE submitted_by IS NULL;
 ALTER TABLE public.games ALTER COLUMN submitted_by SET NOT NULL;
 ```
 
@@ -75,20 +73,20 @@ CREATE POLICY "Allow player insert own games" ON public.games
     AND (auth.uid() = c_id OR auth.uid() = r_id)
   );
 
--- Update: only the NON-submitter can confirm
-CREATE POLICY "Allow opponent confirm game" ON public.games
+-- Update: only the NON-submitter can confirm or reject
+CREATE POLICY "Allow opponent finalise game" ON public.games
   FOR UPDATE USING (
     status = 'pending'
     AND auth.uid() != submitted_by
     AND (auth.uid() = c_id OR auth.uid() = r_id)
   ) WITH CHECK (
-    status = 'confirmed'
+    status IN ('confirmed', 'rejected')
   );
 
--- Delete: either player can delete a pending game (reject)
-CREATE POLICY "Allow players delete pending games" ON public.games
-  FOR DELETE USING (
-    status = 'pending' AND (auth.uid() = c_id OR auth.uid() = r_id)
+-- Rejected games: only visible to the two players involved
+CREATE POLICY "Allow players read rejected games" ON public.games
+  FOR SELECT USING (
+    status = 'rejected' AND (auth.uid() = c_id OR auth.uid() = r_id)
   );
 ```
 
@@ -139,8 +137,8 @@ CREATE TRIGGER trg_compute_elo_ratings_update
 - `getPlayersGames(leaderboardId)` adds `.eq("status", "confirmed")` filter
 - New `pendingGamesQuery(leaderboardId)` -- fetches pending games (RLS ensures only user's games returned)
 - `registerGameMutation` updated to insert with `status: "pending"` and `submitted_by`
-- New `confirmGameMutation(gameId)` -- updates status to 'confirmed'
-- New `rejectGameMutation(gameId)` -- deletes the pending game
+- New `confirmGameMutation(gameId)` -- updates status to 'confirmed', sets `finalised_at`
+- New `rejectGameMutation(gameId)` -- updates status to 'rejected', sets `finalised_at`
 
 ---
 
@@ -148,10 +146,22 @@ CREATE TRIGGER trg_compute_elo_ratings_update
 
 #### 3.1 Submitting a Game (Submitter's Experience)
 
-Flow is identical until submit. Changes:
-- Success toast: "Game submitted! Waiting for {opponent} to confirm."
-- Redirect to history tab where the pending game appears
-- Rating animation still plays as a projection
+Flow is identical until submit. After submit:
+
+**QR code screen**: Instead of redirecting to history, replace the add-game form with a QR code the opponent can scan. The QR encodes `/leaderboard/[slug]/confirm/[gameId]`. Show below the QR:
+- Game summary (e.g. "Charlie beat Rushil")
+- "Done" button to dismiss and return to the Add Game tab
+
+**QR confirm page** (`app/leaderboard/[slug]/confirm/[gameId]/page.tsx`):
+- Shows game details (players, claimed result, who submitted)
+- Confirm and Reject buttons
+- Must be logged in as the opponent — show login prompt if not
+- On confirm: toast, redirect to leaderboard
+- On reject: confirmation dialog, then toast, redirect to leaderboard
+
+**QR library**: Use a lightweight client-side QR generator (e.g. `qrcode.react`)
+
+Rating animation still plays as a projection before submit. After submit, the QR screen replaces it.
 
 #### 3.2 Confirming a Game (Opponent's Experience)
 
@@ -178,8 +188,8 @@ GAME HISTORY
 ```
 
 - **For the opponent**: Confirm and Reject buttons
-- **For the submitter**: "Waiting for {opponent}..." text and a Cancel button
-- Reject shows a confirmation dialog before deleting
+- **For the submitter**: "Waiting for {opponent}..." text and a Cancel button (sets status to 'rejected')
+- Reject shows a confirmation dialog before rejecting
 
 **No fourth tab.** Pending games are a section within History.
 
@@ -193,7 +203,7 @@ V1: No auto-expiry. Pending games persist. Submitter can cancel. Social pressure
 
 #### 3.5 Multiple Pending Games, Same Players
 
-Allowed. Soft warning toast after 3+ pending games against the same opponent.
+Allowed. On the Add Game tab, if the user has any pending games in this leaderboard, show a toast: "{N} pending games" that links to the history tab when clicked. Informational only, not blocking.
 
 #### 3.6 Late Confirmation and Elo Ordering
 
@@ -223,7 +233,7 @@ Frontend replays from scratch in `created_at` order -- always correct. The `rati
 | Submitter tries to confirm own game | RLS prevents: update policy requires `auth.uid() != submitted_by` |
 | Third party sees pending game | RLS prevents: select requires user to be `c_id` or `r_id` |
 | Third party fabricates game | RLS prevents: insert requires `auth.uid() = submitted_by` and in `(c_id, r_id)` |
-| Reject action | Game is deleted. Either player can reject. Confirmation dialog prevents accidents |
+| Reject action | Status set to 'rejected', `finalised_at` set. Game kept in DB but hidden from public. Either player can reject. Confirmation dialog prevents accidents |
 
 ### Critical Files
 
