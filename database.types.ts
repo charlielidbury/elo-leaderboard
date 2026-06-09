@@ -18,7 +18,7 @@ export type Database = {
         Row: {
           c_id: string
           c_rating_check: number
-          confirmed_at: string | null
+          finalised_at: string | null
           created_at: string
           id: string
           leaderboard_id: string
@@ -31,7 +31,7 @@ export type Database = {
         Insert: {
           c_id: string
           c_rating_check?: number
-          confirmed_at?: string | null
+          finalised_at?: string | null
           created_at?: string
           id?: string
           leaderboard_id: string
@@ -44,7 +44,7 @@ export type Database = {
         Update: {
           c_id?: string
           c_rating_check?: number
-          confirmed_at?: string | null
+          finalised_at?: string | null
           created_at?: string
           id?: string
           leaderboard_id?: string

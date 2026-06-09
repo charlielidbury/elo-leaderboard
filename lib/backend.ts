@@ -173,7 +173,7 @@ export const confirmGameMutation = {
       .from("games")
       .update({
         status: "confirmed",
-        confirmed_at: new Date().toISOString(),
+        finalised_at: new Date().toISOString(),
       })
       .eq("id", gameId)
       .select()
@@ -184,15 +184,21 @@ export const confirmGameMutation = {
   },
 };
 
-// Reject game mutation -- either player deletes a pending game
+// Reject game mutation -- either player rejects a pending game (kept as rejected, not deleted)
 export const rejectGameMutation = {
   mutationFn: async (gameId: string) => {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("games")
-      .delete()
-      .eq("id", gameId);
+      .update({
+        status: "rejected",
+        finalised_at: new Date().toISOString(),
+      })
+      .eq("id", gameId)
+      .select()
+      .single();
 
     if (error) throw error;
+    return data;
   },
 };
 

@@ -197,6 +197,25 @@ export default function ConfirmGamePage() {
     );
   }
 
+  if (game.status === "rejected") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4 max-w-sm mx-auto px-4">
+          <h1 className="text-2xl font-bold">Game Rejected</h1>
+          <p className="text-muted-foreground">
+            This game has been rejected and will not count.
+          </p>
+          <Link href={`/leaderboard/${slug}`}>
+            <Button variant="outline" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Leaderboard
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (!isOpponent && !isSubmitter) {
     return (
       <div className="min-h-screen flex items-center justify-center">
