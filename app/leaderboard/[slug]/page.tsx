@@ -60,6 +60,12 @@ function LeaderboardPageContent() {
   const leaderboardQuery = useQuery(leaderboardBySlugQuery(slug));
   const { currentTab, setTab } = useTab();
 
+  useEffect(() => {
+    if (leaderboardQuery.data) {
+      document.title = `${leaderboardQuery.data.name} Chess`;
+    }
+  }, [leaderboardQuery.data]);
+
   if (leaderboardQuery.isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -85,10 +91,6 @@ function LeaderboardPageContent() {
   }
 
   const leaderboard = leaderboardQuery.data;
-
-  useEffect(() => {
-    document.title = `${leaderboard.name} Chess`;
-  }, [leaderboard.name]);
 
   return (
     <LeaderboardContext.Provider
