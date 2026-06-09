@@ -111,6 +111,14 @@ export const registerGameMutation = {
     leaderboard_id: string;
     submitted_by: string;
   }) => {
+    // Verify auth session exists before inserting (gives a clearer error than RLS violation)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("You must be logged in to submit a game.");
+    if (user.id !== submitted_by)
+      throw new Error("Auth session mismatch. Please refresh and try again.");
+
     const { data, error } = await supabase
       .from("games")
       .insert({
