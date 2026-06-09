@@ -45,7 +45,7 @@ export default function RegisterGame() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto px-4">
       <OpponentSelectStage currentUser={player} />
     </div>
   );
@@ -86,7 +86,7 @@ function OpponentSelectStage({ currentUser }: { currentUser: Player }) {
             }}
           >
             <SelectTrigger
-              className={`text-2xl font-semibold h-16 px-8 gap-3 ${
+              className={`text-xl sm:text-2xl font-semibold h-14 sm:h-16 px-6 sm:px-8 gap-3 ${
                 !opponent
                   ? "bg-muted hover:bg-muted/80"
                   : "bg-primary text-primary-foreground hover:bg-primary/90"
@@ -129,11 +129,11 @@ function ResultStage({
 
   return (
     <div className="space-y-12">
-      <div className="flex items-center justify-center">
-        <div className="flex">
+      <div className="flex items-center justify-center px-4">
+        <div className="flex w-full max-w-md">
           <Button
             onClick={() => setWinner(currentUser)}
-            className={`h-16 text-2xl font-semibold px-8 rounded-r-none border-r-0 ${
+            className={`h-14 sm:h-16 text-xl sm:text-2xl font-semibold flex-1 px-2 sm:px-8 rounded-r-none border-r-0 ${
               winner !== currentUser ? "bg-muted hover:bg-muted/80" : ""
             }`}
             variant={winner === currentUser ? "default" : "outline"}
@@ -143,7 +143,7 @@ function ResultStage({
 
           <Button
             onClick={() => setWinner(opponent)}
-            className={`h-16 text-2xl font-semibold px-8 rounded-none border-r-0 ${
+            className={`h-14 sm:h-16 text-xl sm:text-2xl font-semibold flex-1 px-2 sm:px-8 rounded-none border-r-0 ${
               winner !== opponent ? "bg-muted hover:bg-muted/80" : ""
             }`}
             variant={winner === opponent ? "default" : "outline"}
@@ -153,7 +153,7 @@ function ResultStage({
 
           <Button
             onClick={() => setWinner(null)}
-            className={`h-16 text-2xl font-semibold px-8 rounded-l-none ${
+            className={`h-14 sm:h-16 text-xl sm:text-2xl font-semibold flex-1 px-2 sm:px-8 rounded-l-none ${
               winner !== null ? "bg-muted hover:bg-muted/80" : ""
             }`}
             variant={winner === null ? "default" : "outline"}
@@ -304,16 +304,16 @@ function RatingDisplay({
   };
 
   return (
-    <div className="flex items-center justify-center space-x-16">
-      <div className="text-center">
-        <h3 className="text-2xl font-bold text-foreground">
+    <div className="flex items-center justify-center gap-4 sm:gap-16 px-4">
+      <div className="text-center min-w-0 flex-1 max-w-[10rem] sm:max-w-none">
+        <h3 className="text-lg sm:text-2xl font-bold text-foreground truncate">
           {currentUser.name}
         </h3>
         <div className="mt-2">
-          <span className="text-xl font-semibold">{animatedCurrentRating}</span>
+          <span className="text-lg sm:text-xl font-semibold">{animatedCurrentRating}</span>
           {animatedCurrentChange !== 0 && (
             <span
-              className={`ml-2 text-sm font-medium ${
+              className={`ml-1 sm:ml-2 text-xs sm:text-sm font-medium ${
                 animatedCurrentChange >= 0 ? "text-green-600" : "text-red-600"
               }`}
             >
@@ -323,17 +323,17 @@ function RatingDisplay({
         </div>
       </div>
 
-      <div className="text-4xl font-bold text-muted-foreground">VS</div>
+      <div className="text-2xl sm:text-4xl font-bold text-muted-foreground shrink-0">VS</div>
 
-      <div className="text-center">
-        <h3 className="text-2xl font-bold text-foreground">{opponent.name}</h3>
+      <div className="text-center min-w-0 flex-1 max-w-[10rem] sm:max-w-none">
+        <h3 className="text-lg sm:text-2xl font-bold text-foreground truncate">{opponent.name}</h3>
         <div className="mt-2">
-          <span className="text-xl font-semibold">
+          <span className="text-lg sm:text-xl font-semibold">
             {animatedOpponentRating}
           </span>
           {animatedOpponentChange !== 0 && (
             <span
-              className={`ml-2 text-sm font-medium ${
+              className={`ml-1 sm:ml-2 text-xs sm:text-sm font-medium ${
                 animatedOpponentChange >= 0 ? "text-green-600" : "text-red-600"
               }`}
             >
@@ -423,7 +423,7 @@ function SubmitStage({
           <Button
             onClick={handleSubmitGame}
             disabled={registerGameMut.isPending}
-            className="h-16 text-2xl font-bold px-8"
+            className="h-14 sm:h-16 text-xl sm:text-2xl font-bold px-6 sm:px-8"
           >
             {getButtonText()}
           </Button>
