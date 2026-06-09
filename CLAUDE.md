@@ -34,6 +34,12 @@ Worktree agents should start their dev server from inside the worktree directory
 eval "$(direnv export bash 2>/dev/null)" && pnpm install && pnpm dev --port <PORT>
 ```
 
+If `direnv export` fails to find the toolchain (exit 127 for pnpm/node), the worktree is missing `.envrc`. Copy it from the main project root and allow it:
+
+```sh
+cp /home/charlielidbury/repos/elo-leaderboard/.envrc .envrc && direnv allow .
+```
+
 When the parent agent needs to start a worktree's dev server externally, `cd` into the worktree first — `pnpm --dir` does not work with `next dev`, and `direnv export` resolves relative to cwd so it must run from a directory with `.envrc` or the project root.
 
 ## Rules
