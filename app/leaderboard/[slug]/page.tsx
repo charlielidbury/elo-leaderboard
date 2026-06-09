@@ -2,18 +2,56 @@
 
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { leaderboardBySlugQuery } from "@/lib/backend";
+import { leaderboardBySlugQuery, pendingGamesQuery } from "@/lib/backend";
 import { LeaderboardContext } from "@/hooks/use-leaderboard";
 import { Button } from "@/components/ui/button";
-import { Trophy, History, Plus, Clock, ArrowLeft } from "lucide-react";
+import { Trophy, History, Plus, Clock, ArrowLeft, Bell } from "lucide-react";
 import Players from "@/components/main/leaderboard";
 import Games from "@/components/main/history";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoginButton } from "@/components/login-button";
 import RegisterGame from "@/components/main/add-game";
 import { useTab } from "@/hooks/use-tab";
+import { usePlayer } from "@/hooks/use-player";
 import Link from "next/link";
 import { Suspense } from "react";
+
+function PendingGamesBanner({ leaderboardId }: { leaderboardId: string }) {
+  const { player } = usePlayer();
+  const { setTab } = useTab();
+  const pending = useQuery({
+    ...pendingGamesQuery(leaderboardId),
+    enabled: !!player,
+  });
+
+  // Count games where the current user is the opponent (not the submitter)
+  const gamesToConfirm =
+    pending.data?.filter((game) => game.submitted_by !== player?.id) ?? [];
+
+  if (gamesToConfirm.length === 0) return null;
+
+  return (
+    <div className="bg-yellow-100 dark:bg-yellow-900/30 border-b border-yellow-300 dark:border-yellow-700 px-4 py-3">
+      <div className="max-w-[500px] mx-auto flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Bell className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+          <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+            You have {gamesToConfirm.length} game
+            {gamesToConfirm.length !== 1 ? "s" : ""} to confirm
+          </span>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setTab("history")}
+          className="text-xs"
+        >
+          Review
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 function LeaderboardPageContent() {
   const params = useParams();
@@ -52,6 +90,9 @@ function LeaderboardPageContent() {
       value={{ leaderboard, leaderboardId: leaderboard.id }}
     >
       <div className="min-h-screen flex flex-col">
+        {/* Pending games notification banner */}
+        <PendingGamesBanner leaderboardId={leaderboard.id} />
+
         {/* Header and Navigation - Muted Background */}
         <div className="bg-muted pb-8">
           <div className="space-y-8">

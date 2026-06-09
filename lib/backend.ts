@@ -18,11 +18,12 @@ async function getPlayersGames(
 
   if (playersError) throw playersError;
 
-  // Fetch games scoped to this leaderboard
+  // Fetch confirmed games scoped to this leaderboard
   const { data: unpopulatedGames, error: gamesError } = await supabase
     .from("games")
     .select("*")
     .eq("leaderboard_id", leaderboardId)
+    .eq("status", "confirmed")
     .order("created_at", { ascending: true });
 
   if (gamesError) throw gamesError;
@@ -95,19 +96,29 @@ export const allPlayersQuery = {
   },
 };
 
-// Register game mutation (trigger handles rating_check server-side)
+// Register game mutation -- inserts as pending, requiring opponent confirmation
 export const registerGameMutation = {
   mutationFn: async ({
     c_id,
     r_id,
     winner_id,
     leaderboard_id,
+    submitted_by,
   }: {
     c_id: string;
     r_id: string;
     winner_id: string | null;
     leaderboard_id: string;
+    submitted_by: string;
   }) => {
+    // Verify auth session exists before inserting (gives a clearer error than RLS violation)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("You must be logged in to submit a game.");
+    if (user.id !== submitted_by)
+      throw new Error("Auth session mismatch. Please refresh and try again.");
+
     const { data, error } = await supabase
       .from("games")
       .insert({
@@ -115,8 +126,84 @@ export const registerGameMutation = {
         r_id,
         winner_id,
         leaderboard_id,
+        submitted_by,
+        status: "pending",
       })
-      .select();
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+};
+
+// Pending games query -- fetches pending games for this leaderboard (RLS filters to user's games)
+export function pendingGamesQuery(leaderboardId: string) {
+  return {
+    queryKey: ["pending-games", leaderboardId],
+    queryFn: async (): Promise<Game[]> => {
+      // Fetch all players for population
+      const { data: uncheckedPlayers, error: playersError } = await supabase
+        .from("players")
+        .select("*");
+
+      if (playersError) throw playersError;
+
+      const { data: unpopulatedGames, error: gamesError } = await supabase
+        .from("games")
+        .select("*")
+        .eq("leaderboard_id", leaderboardId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+
+      if (gamesError) throw gamesError;
+
+      const playersMap: Map<string, UncheckedPlayer> = new Map(
+        uncheckedPlayers?.map((player) => [player.id, player])
+      );
+
+      return unpopulatedGames.map((game) => ({
+        ...game,
+        winner: game.winner_id
+          ? (playersMap.get(game.winner_id)! as Player)
+          : null,
+        charlie: playersMap.get(game.c_id)! as Player,
+        rushil: playersMap.get(game.r_id)! as Player,
+      }));
+    },
+  };
+}
+
+// Confirm game mutation -- opponent confirms a pending game
+export const confirmGameMutation = {
+  mutationFn: async (gameId: string) => {
+    const { data, error } = await supabase
+      .from("games")
+      .update({
+        status: "confirmed",
+        finalised_at: new Date().toISOString(),
+      })
+      .eq("id", gameId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+};
+
+// Reject game mutation -- either player rejects a pending game (kept as rejected, not deleted)
+export const rejectGameMutation = {
+  mutationFn: async (gameId: string) => {
+    const { data, error } = await supabase
+      .from("games")
+      .update({
+        status: "rejected",
+        finalised_at: new Date().toISOString(),
+      })
+      .eq("id", gameId)
+      .select()
+      .single();
 
     if (error) throw error;
     return data;

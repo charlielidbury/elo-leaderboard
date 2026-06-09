@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { playersQuery, allPlayersQuery, registerGameMutation } from "@/lib/backend";
 import { toast } from "@/hooks/use-toast";
-import { type Player, type UncheckedPlayer } from "@/lib/database";
+import { type Player, type UncheckedPlayer, type UnpopulatedGame } from "@/lib/database";
 import { useAuth } from "@/hooks/use-auth";
 import {
   Select,
@@ -17,6 +17,7 @@ import { useTab } from "@/hooks/use-tab";
 import { pointsTransfer } from "@/lib/elo";
 import { LoginButton } from "@/components/login-button";
 import { useLeaderboard } from "@/hooks/use-leaderboard";
+import { QRCodeSVG } from "qrcode.react";
 
 const STAGE_FADE_IN = "animate-in fade-in duration-300";
 
@@ -350,27 +351,26 @@ function SubmitStage({
   currentUser,
   opponent,
   winner,
-  isAnimating,
 }: {
   currentUser: Player;
   opponent: Player;
   winner: Player | null | undefined;
 }) {
-  const { leaderboardId } = useLeaderboard();
+  const { leaderboard, leaderboardId } = useLeaderboard();
   const queryClient = useQueryClient();
-  const { setTab } = useTab();
+  const [submittedGame, setSubmittedGame] = useState<UnpopulatedGame | null>(null);
 
   const registerGameMut = useMutation({
     ...registerGameMutation,
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["games", leaderboardId] });
       queryClient.invalidateQueries({ queryKey: ["players", leaderboardId] });
+      queryClient.invalidateQueries({ queryKey: ["pending-games", leaderboardId] });
       toast({
-        title: "Game added successfully!",
-        description: "The game has been recorded and ratings updated.",
+        title: "Game submitted!",
+        description: `Waiting for ${opponent.name} to confirm.`,
       });
-      // Switch to history tab to show the newly added game
-      setTab("history");
+      setSubmittedGame(data);
     },
     onError: (error: Error) => {
       toast({
@@ -403,6 +403,7 @@ function SubmitStage({
       r_id: opponent.id,
       winner_id: winner?.id ?? null,
       leaderboard_id: leaderboardId,
+      submitted_by: currentUser.id,
     });
   };
 
@@ -415,6 +416,26 @@ function SubmitStage({
 
     return "Submit Game";
   };
+
+  // Show QR code after successful submission
+  if (submittedGame) {
+    const confirmUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/leaderboard/${leaderboard.slug}/confirm/${submittedGame.id}`;
+
+    return (
+      <div className={`${STAGE_FADE_IN} flex flex-col items-center space-y-4`}>
+        <h3 className="text-lg font-semibold">Waiting for {opponent.name} to confirm</h3>
+        <p className="text-sm text-muted-foreground text-center">
+          Ask them to scan this QR code, or they can confirm from the History tab.
+        </p>
+        <div className="bg-white p-4 rounded-lg">
+          <QRCodeSVG value={confirmUrl} size={200} />
+        </div>
+        <p className="text-xs text-muted-foreground break-all max-w-[300px] text-center">
+          {confirmUrl}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex justify-center">
