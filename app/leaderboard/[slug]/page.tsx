@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { leaderboardBySlugQuery, pendingGamesQuery } from "@/lib/backend";
 import { LeaderboardContext } from "@/hooks/use-leaderboard";
 import { Button } from "@/components/ui/button";
@@ -84,6 +85,10 @@ function LeaderboardPageContent() {
   }
 
   const leaderboard = leaderboardQuery.data;
+
+  useEffect(() => {
+    document.title = `${leaderboard.name} Chess`;
+  }, [leaderboard.name]);
 
   return (
     <LeaderboardContext.Provider
